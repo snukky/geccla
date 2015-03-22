@@ -5,13 +5,14 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from cmd import run_cmd, wc
+import cmd
 from confusion_set import ConfusionSet
 from confusions import parse_conf_line
 from logger import log
 
 from classification import FORMATS
 from features import FEATURE_SETS
+
 
 
 class FeatureVectorizer():
@@ -176,7 +177,7 @@ class FeatureVectorizer():
             return
             
         log.info("counting frequencies...")
-        run_cmd("cat {} | sed 's/|||/\\t/g' | cut -f5 | tr ' ' '\\n' "
+        cmd.run("cat {} | sed 's/|||/\\t/g' | cut -f5 | tr ' ' '\\n' "
             "| sort | uniq -c | sort -nr > {}".format(cnfs_file, freq_file))
     
     def create_feat_file(self, freq_file, feat_set, feat_file):
@@ -188,7 +189,7 @@ class FeatureVectorizer():
         log.info("minimum count for single feature: {}" \
             .format(self.min_feat_count))
     
-        line_num = run_cmd("cat {} | grep -Pn ' +{} .*' | tr ':' '\\t' | cut -f1 | tail -1" \
+        line_num = cmd.run("cat {} | grep -Pn ' +{} .*' | tr ':' '\\t' | cut -f1 | tail -1" \
             .format(freq_file, self.min_feat_count)).strip()
     
         log.info("building feature vector...")
@@ -196,12 +197,12 @@ class FeatureVectorizer():
         log.info("total number of predicates: {}".format(len(FEATURE_SETS[feat_set])))
     
         regex = '^(' + '|'.join(FEATURE_SETS[feat_set]) + ')='
-        run_cmd("head -n {} {} | sed -r 's/ *[0-9]+ (.*)/\\1/' | grep -P '{}' > {}" \
+        cmd.run("head -n {} {} | sed -r 's/ *[0-9]+ (.*)/\\1/' | grep -P '{}' > {}" \
             .format(line_num, freq_file, regex, feat_file))
 
         log.info("limit for features: {}".format(self.max_vec_size))
-        log.info("active features: {}".format(wc(feat_file)))
+        log.info("active features: {}".format(cmd.wc(feat_file)))
     
-        feat_count = run_cmd("cat {} | sed -r 's/(.*)=.*/\\1/' | sort -u | wc -l" \
+        feat_count = cmd.run("cat {} | sed -r 's/(.*)=.*/\\1/' | sort -u | wc -l" \
             .format(feat_file)).strip()
         log.info("active predicates: {}".format(feat_count))

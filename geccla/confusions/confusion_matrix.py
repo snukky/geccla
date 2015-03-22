@@ -3,11 +3,12 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 
+import cmd
+import config
+
 from confusion_set import ConfusionSet
-from cmd import run_cmd
 from logger import log
 
-import config
 
 
 class ConfusionMatrix():
@@ -50,7 +51,7 @@ class ConfusionMatrix():
         return self.num_of_AB_confs() / float(self.num_of_confs() * 100)
 
     def __build_matrix(self, cnfs_file):
-        output = run_cmd("cat {0} | tr -s '|||' '\t' | cut -f3,4 | "
+        output = cmd.run("cat {0} | tr -s '|||' '\t' | cut -f3,4 | "
             "sort | uniq -c".format(cnfs_file))
         log.debug(output)
     

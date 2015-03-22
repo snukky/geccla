@@ -3,13 +3,14 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from logger import log
-from cmd import run_cmd, get_source_side_of_file
+import cmd
 
 from confusions.basic_finder import BasicFinder
 
 from taggers.pos_tagger import StanfordPOSTagger as POSTagger
 from taggers.wc_tagger import WordClassTagger as WCTagger
+
+from logger import log
 
 DEBUG_COUNTER = 10000
 
@@ -133,7 +134,7 @@ class NullFinder(BasicFinder):
                 os.remove(file + '.freq')
 
     def __tag_file(self, corpus, levels):
-        input = get_source_side_of_file(corpus)
+        input = cmd.get_source_side_of_file(corpus)
 
         log.info("tagging file {} at levels: {}".format(input, ', '.join(levels)))
 
@@ -179,14 +180,14 @@ class NullFinder(BasicFinder):
 
     def __count_frequencies(self, list_file, freq_file):
         log.debug("counting n-gram frequencies in file {}...".format(list_file))
-        run_cmd("cat {0} | sort | uniq -c | sort -nr > {1}" \
+        cmd.run("cat {0} | sort | uniq -c | sort -nr > {1}" \
             .format(list_file, freq_file))
 
     def __save_ngrams(self, freq_file, ngram_file, min_count):
         log.debug("storing n-gram frequencies to file {}...".format(ngram_file))
-        line_num = run_cmd("cat {0} | grep -Pn ' +{1} .*' | tr ':' '\\t'" \
+        line_num = cmd.run("cat {0} | grep -Pn ' +{1} .*' | tr ':' '\\t'" \
             " | cut -f1 | tail -1".format(freq_file, min_count))
-        run_cmd("head -n {} {} | sed -r 's/ *[0-9]+ (.*)/\\1/' >> {}" \
+        cmd.run("head -n {} {} | sed -r 's/ *[0-9]+ (.*)/\\1/' >> {}" \
             .format(line_num.strip(), freq_file, ngram_file))
         
     def __extract_ngrams(self, tokens, tags):

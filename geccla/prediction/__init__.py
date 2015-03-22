@@ -3,9 +3,10 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 
+import cmd
+
 from confusion_set import ConfusionSet
 from confusions import parse_conf_line
-from cmd import run_cmd, wc
 
 from logger import log
 
@@ -51,7 +52,7 @@ def parse_pred_file(pred_file, format, conf_set, normalize=True):
     predictions = []
 
     if 'snow' == format:
-        output = run_cmd("cat {0} | grep -a '^  Ex.*' | "
+        output = cmd.run("cat {0} | grep -a '^  Ex.*' | "
             "sed -r 's/.*Prediction - ([0-9]).*\\(([.0-9]+).*/\\1 \\2/'" \
             .format(pred_file))
 

@@ -3,10 +3,10 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from confusion_set import ConfusionSet
-from cmd import run_cmd
-
+import cmd
 import config
+
+from confusion_set import ConfusionSet
 
 
 class MultiClassifier():
@@ -27,7 +27,7 @@ class MultiClassifier():
             log.error("data file does not exists: {}".format(data_file))
 
         if 'snow' == algorithm:
-            run_cmd("{bin} -test -I {data} -F {model} -v max -R {pred} {opts}" \
+            cmd.run("{bin} -test -I {data} -F {model} -v max -R {pred} {opts}" \
                 .format(bin=config.CLASSIFIERS.SNOW, 
                         data=data_file, model=model_file, pred=pred_file, 
                         opts=options))
@@ -35,18 +35,18 @@ class MultiClassifier():
         elif 'vw' == algorithm:
             reduced_options = re.sub(r'--(oaa|ect|wap)\s+\d+ ', '', options)
 
-            run_cmd("{bin} -t -d {data} -i {model} -c -r {pred} {opts}" \
+            cmd.run("{bin} -t -d {data} -i {model} -c -r {pred} {opts}" \
                 .format(bin=config.CLASSIFIERS.VW, 
                         data=data_file, model=model_file, pred=pred_file, 
                         opts=reduced_options))
 
         elif 'liblinear' == algorithm:
-            run_cmd("{dir}/predict -b 1 {data} {model} {pred}" \
+            cmd.run("{dir}/predict -b 1 {data} {model} {pred}" \
                 .format(dir=config.CLASSIFIERS.LIBLINEAR, 
                         data=data_file, model=model_file, pred=pred_file))
 
         elif 'maxent' == algorithm:
-            run_cmd("{bin} -testFile {data} -loadClassifier {model} {opts} > {pred}" \
+            cmd.run("{bin} -testFile {data} -loadClassifier {model} {opts} > {pred}" \
                 .format(bin=config.CLASSIFIERS.MAXENT, 
                         data=data_file, model=model_file, pred=pred_file, 
                         opts=options))
@@ -64,25 +64,25 @@ class MultiClassifier():
             log.error("data file does not exists: {}".format(data_file))
 
         if 'snow' == algorithm:
-            run_cmd("{bin} -train -I {data} -F {model} {opts}" \
+            cmd.run("{bin} -train -I {data} -F {model} {opts}" \
                 .format(bin=config.CLASSIFIERS.SNOW, 
                         data=data_file, model=model_file,
                         opts=options))
             
         elif 'vw' == algorithm:
-            run_cmd("{bin} -d {data} -f {model} -c {opts}" \
+            cmd.run("{bin} -d {data} -f {model} -c {opts}" \
                 .format(bin=config.CLASSIFIERS.VW, 
                         data=data_file, model=model_file,
                         opts=options))
 
         elif 'liblinear' == algorithm:
-            run_cmd("{bin}/train {opts} {data} {model}" \
+            cmd.run("{bin}/train {opts} {data} {model}" \
                 .format(bin=config.CLASSIFIERS.LIBLINEAR, 
                         data=data_file, model=model_file,
                         opts=options))
 
         elif 'maxent' == algorithm:
-            run_cmd("{bin} -trainFile {data} -serializeTo {model} -prop {data}.prop {opts}" \
+            cmd.run("{bin} -trainFile {data} -serializeTo {model} -prop {data}.prop {opts}" \
                 .format(bin=config.CLASSIFIERS.MAXENT, 
                         data=data_file, model=model_file,
                         opts=options))
