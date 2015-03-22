@@ -1,5 +1,6 @@
 # General
 *~
+*.pyc
 
 # Project specific
 geccla/taggers/lbj/*.class
