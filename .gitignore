@@ -1,0 +1,13 @@
+# General
+*~
+
+# Project specific
+geccla/taggers/lbj/*.class
+tmp/*
+
+# Vim
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+*.un~
+Session.vim
+.netrwhist
