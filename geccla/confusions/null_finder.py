@@ -134,7 +134,7 @@ class NullFinder(BasicFinder):
                 os.remove(file + '.freq')
 
     def __tag_file(self, corpus, levels):
-        input = cmd.get_source_side_of_file(corpus)
+        input = cmd.source_side_of_file(corpus)
 
         log.info("tagging file {} at levels: {}".format(input, ', '.join(levels)))
 

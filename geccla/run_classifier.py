@@ -23,7 +23,7 @@ def main():
 def parse_user_arguments():
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('cnfs_file', type=str, help=".cnfs file")
+    parser.add_argument('model_file', type=str, help="model file")
     parser.add_argument('data_file', type=str, help="data file")
 
     req = parser.add_argument_group("required arguments")
@@ -33,13 +33,15 @@ def parse_user_arguments():
         help="confusion set as comma-separated list of words")
 
     parser.add_argument('-t', '--train', action='store_true', 
-        help="train classifier instead running")
+        help="train classifier")
     parser.add_argument('-p', '--pred-file', type=str,
         help="output file with classifier predictions")
+    parser.add_argument('-o', '--options', type=str,
+        help="custom options for classifier")
     
     args = parser.parse_args()
-    if args.train and not args.pred_file:
-        raise ArgumentError("argument --pred-file is required when running "
+    if not args.train and not args.pred_file:
+        raise ArgumentError("argument --pred-file is required while running "
             "a classifier")
     return args
 

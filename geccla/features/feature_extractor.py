@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from logger import log
 
 from collections import OrderedDict
-from confusions import iterate_confusion_examples
+from confusions import iterate_text_and_confs
 
 from taggers.pos_tagger import StanfordPOSTagger as POSTagger
 from taggers.wc_tagger import WordClassTagger as WCTagger
@@ -26,7 +26,7 @@ class FeatureExtractor():
         pos_io = open(self.pos_tagger.tag_file(input_file))
         awc_io = open(self.wc_tagger.tag_file(input_file))
 
-        for s, cnfs, text in iterate_confusion_examples(input_file, cnfs_file):
+        for s, cnfs, text in iterate_text_and_confs(input_file, cnfs_file):
             tokens = text.strip().lower().split()
             pos_tags = pos_io.next().strip().split()
             awc_tags = awc_io.next().strip().split()

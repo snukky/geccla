@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import argparse
 import os
 import sys
 
@@ -58,4 +57,6 @@ def parse_user_arguments():
 
 
 if __name__ == '__main__':
+    import argparse
+
     main()

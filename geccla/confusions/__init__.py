@@ -1,12 +1,10 @@
 import sys
 
 
-
-
-def iterate_confusion_examples(text_file, cnfs_file):
+def iterate_text_and_confs(text_file, cnfs_file):
     """
     Iterates confusion examples for each sentence from source text file.
-    Yields a tuple: (number of sentences, [confusion examples], a sentence).
+    Yields a tuple: (a number of sentence, [confusion examples], a sentence).
     """
     text_io = open(text_file)
     cnfs_io = open(cnfs_file)

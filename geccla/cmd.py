@@ -15,8 +15,23 @@ def wc(file):
 def ln(file, link):
     run("ln -s {} {}".format(os.path.abspath(file), os.path.abspath(link)))
 
+def wdiff(file1, file2, output_file=None):
+    if os.path.exists(file1):
+        log.error("file {} does not exists".format(file1))
+        return None
+    if os.path.exists(file2):
+        log.error("file {} does not exists".format(file2))
+        return None
 
-def get_source_side_of_file(file):
+    if not output_file:
+        output_file = file2 + '.wdiff'
+    run("wdiff {0} {1} | sed -e :a -e '/-]$/N; s/\\n/ /; ta'"
+        " | grep -P '\\[-|{{\+' > {2}".format(file1, file2, output_file))
+
+    return output_file
+
+
+def source_side_of_file(file):
     if is_parallel_file(file):
         run("cut -f1 {0} > {0}.err".format(file))
         return file + '.err'

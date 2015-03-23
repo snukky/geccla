@@ -11,3 +11,6 @@ ALGORITHMS_AND_FORMATS = {
 ALGORITHMS = ALGORITHMS_AND_FORMATS.keys()
 
 FORMATS = list(set(ALGORITHMS_AND_FORMATS.values()))
+
+def algorithm_to_format(algorithm):
+    return ALGORITHMS_AND_FORMATS[algorithm]

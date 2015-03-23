@@ -14,40 +14,59 @@ from logger import log
 FORMATS_NEEDED_NORMALIZATION = ['vw']
 
 
-def iterate_confusions_with_predictions(cnfs_file, predictions, 
-                                        threshold=None, difference=None,
-                                        with_skipped=False):
-    skip_by_thr, skip_by_dif, skip_by_both = 0, 0, 0
+def iterate_text_confs_and_preds(text_file, cnfs_file, predictions,
+                                 threshold=None, difference=None):
+    text_io = open(text_file)
+    cnfs_io = open(cnfs_file)
+
+    n = 0
+    m = 0
+    cnfs_n, i, j, err, cor, _ = parse_conf_line(cnfs_io.readline())
+
+    for line in text_io:
+        confusinos = []
+        answers = []
+
+        while cnfs_n == n:
+            confusions.append( (i, j, err, cor) )
+            answers.append( (i, j, predictions[i]) )
+            cnfs_n, i, j, err, cor, _ = parse_conf_line(cnfs_io.readline())
+            m += 1
+        
+        yield (n, line.strip(), confusions, answers)
+        n += 1
+
+    text_io.close()
+    cnfs_io.close()
+    
+
+def iterate_confs_and_preds(cnfs_file, predictions, 
+                            threshold=None, difference=None):
 
     with open(cnfs_file) as cnfs_io:
         for i, line in enumerate(cnfs_io):
             _, _, _, err, cor, _ = parse_conf_line(line)
-            pred, confidence = find_best_answer(predictions[i])
-            err, cor, pred = err.lower(), cor.lower(), pred.lower()
+            pred = get_best_prediction(predictions[i], threshold, difference)
 
-            skip = False
+            yield (err, cor, pred)
 
-            if threshold and confidence:
-                if confidence < threshold:
-                    pred = err
-                    skip_by_thr += 1
-                    skip_by_both += 1
-                    skip = True
+def get_best_prediction(answers, threshold=None, difference=None):
+    pred, confidence = find_best_answer(answers)
+    err, _, pred = err.lower(), cor.lower(), pred.lower()
 
-            if difference and len(predictions[i]) > 1:
-                values = sorted(predictions[i].values())
-                if values[-1] - values[-2] < difference:
-                    pred = err
-                    skip_by_dif += 1
-                    if not skip:
-                        skip_by_both += 1
+    if threshold and confidence:
+        if confidence < threshold:
+            pred = err
 
-            if with_skipped:
-                yield (err, cor, pred, (skip_by_thr, skip_by_dif, skip_by_both))
-            else:
-                yield (err, cor, pred)
+    if difference and len(answers) > 1:
+        values = sorted(answers.values())
+        if values[-1] - values[-2] < difference:
+            pred = err
+    
+    return pred 
 
-def parse_pred_file(pred_file, format, conf_set, normalize=True):
+
+def parse_pred_file(pred_file, format, conf_set):
     conf_set = ConfusionSet(conf_set)
     predictions = []
 
@@ -109,7 +128,7 @@ def parse_pred_file(pred_file, format, conf_set, normalize=True):
         log.error("extraction of predictions failed! ({} != {})" \
             .format(pred_length, pred_file_length))
 
-    if normalize and format in FORMATS_NEEDED_NORMALIZATION:
+    if format in FORMATS_NEEDED_NORMALIZATION:
         return normalize_predictions(predictions)
     return predictions
 

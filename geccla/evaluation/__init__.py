@@ -3,7 +3,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from prediction import iterate_confusions_with_predictions
+from prediction import iterate_confs_and_preds
 from prediction import parse_pred_file
 from evaluation import metrics
 
@@ -63,8 +63,7 @@ def print_complete_evaluation(cnfs_file, pred_file,
 
 
 def evaluate_by_confusion_matrix(cnfs_file, preds, 
-                                 thr=None, dif=None, 
-                                 with_skipped=None):
+                                 thr=None, dif=None):
     """
     Returns a tuple (TP, TN, FP, FN, XYZ), where XYZ for correction task
     is equal to FP and for detection task is equal to TP.
@@ -72,7 +71,7 @@ def evaluate_by_confusion_matrix(cnfs_file, preds,
     log.debug("evaluating by confusion matrix: {}".format(cnfs_file))
 
     tp, fp, tn, fn, xyz = 0, 0, 0, 0, 0
-    results = iterate_confusions_with_predictions(cnfs_file, preds, thr, dif)
+    results = iterate_confs_and_preds(cnfs_file, preds, thr, dif)
 
     for err, cor, pred in results:
         # figure 4. WAS evaluation scheme

@@ -18,7 +18,7 @@ class MultiClassifier():
     def run(self, algorithm, model_file, data_file, pred_file, options=''):
         log.info("running model: {}".format(model_file))
 
-        if not options:
+        if options is None or options.strip() == '':
             options = self.__default_options(algorithm)
 
         if not os.path.exists(model_file):
