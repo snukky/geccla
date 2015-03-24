@@ -17,9 +17,9 @@ class TOOLS:
     PARALLEL    = 'parallel --no-notice --pipe --keep-order --block 2M -j {}'.format(THREADS)
     LOWERCASER  = 'perl /home/romang/mosesdecoder/scripts/tokenizer/lowercase.perl'
 
-    STANFORD_TOKENIZER_DIR  = '/home/romang/tools/stanford-postagger-2014-01-04'
+    STANFORD_TOKENIZER_DIR  = '/home/snukky/Programy/stanford-postagger-2014-01-04'
     LBJ_CHUNKER             = 'java -Xmx512m -cp $CLASSPATH:{}/taggers/lbj FixedLBJChunker'.format(ROOT_DIR)
 
 
 class FILES:
-    WORD_CLASSES = '/home/romang/data/word2vec/classes.moses.lc.wc'
+    WORD_CLASSES = '/home/snukky/Korpusy/word2vec/classes.moses.lc.wc'

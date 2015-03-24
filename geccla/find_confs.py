@@ -22,7 +22,7 @@ def main():
         finder = NullFinder(args.confusion_set)
         confs = finder.find_confusion_nulls(args.input_file, 
                                             args.ngrams_prefix,
-                                            'tok awc'.split())
+                                            args.levels)
     else:
         finder = BasicFinder(args.confusion_set)
         confs = finder.find_confusion_words(args.input_file)
@@ -41,6 +41,9 @@ def parse_user_arguments():
         help="confusion set as comma-separated list of words")
     parser.add_argument('-n', '--ngrams-prefix', type=str,
         help="prefix for files with list of n-grams")
+    parser.add_argument('-l', '--levels', nargs='+', default=['tok', 'awc'],
+        choices=NullFinder.LEVELS, help="levels of n-grams extraction")
+
     parser.add_argument('--artordet', action='store_true',
         help="enable enhanced finding rules for articles and determiners")
     

@@ -1,0 +1,25 @@
+include Makefile.data
+
+
+nucle.ngrams.*: nucle.txt
+	python ../geccla/train_nulls.py -c a,an,the, -l tok pos awc -n $@ $?
+
+test2013.cnfs.tok: test2013.err nucle.ngrams.*
+	python ../geccla/find_confs.py -c a,an,the, -l tok -n nucle.ngrams $(word 1,$^) > $@
+test2013.cnfs.pos: test2013.err nucle.ngrams.*
+	python ../geccla/find_confs.py -c a,an,the, -l pos -n nucle.ngrams $(word 1,$^) > $@
+test2013.cnfs.awc: test2013.err nucle.ngrams.*
+	python ../geccla/find_confs.py -c a,an,the, -l awc -n nucle.ngrams $(word 1,$^) > $@
+test2013.cnfs.tok_pos: test2013.err nucle.ngrams.*
+	python ../geccla/find_confs.py -c a,an,the, -l tok pos -n nucle.ngrams $(word 1,$^) > $@
+test2013.cnfs.tok_awc: test2013.err nucle.ngrams.*
+	python ../geccla/find_confs.py -c a,an,the, -l tok awc -n nucle.ngrams $(word 1,$^) > $@
+test2013.cnfs.tok_pos_awc: test2013.err nucle.ngrams.*
+	python ../geccla/find_confs.py -c a,an,the, -l tok pos awc -n nucle.ngrams $(word 1,$^) > $@
+
+test2013.cnfs.all: test2013.cnfs.tok test2013.cnfs.pos test2013.cnfs.awc test2013.cnfs.tok_pos test2013.cnfs.tok_awc test2013.cnfs.tok_pos_awc
+
+clean: 
+	rm -f test2013.cnfs.* nucle.ngrams.* nucle.txt.* test2013.err.*
+
+.PHONY: clean

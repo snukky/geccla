@@ -10,18 +10,6 @@ from evaluation import metrics
 from logger import log
 
 
-def evaluate(cnfs_file, pred_file, format, conf_set, thr, dif):
-    """
-    Evaluates classifier's predictions according to F_0.5 score.
-    """
-    preds = parse_pred_file(pred_file, format, conf_set)
-    tp, tn, fp, fn, xyz = evaluate_by_confusion_matrix(cnfs_file, preds, thr, dif)
-
-    return (metrics.precision(tp, tn, fp + xyz, fn),
-            metrics.recall(tp, tn, fp + xyz, fn),
-            metrics.fscore(tp, tn, fp + xyz, fn))
-
-
 def print_complete_evaluation(cnfs_file, pred_file, 
                               format, conf_set, 
                               thr, dif):
@@ -61,6 +49,16 @@ def print_complete_evaluation(cnfs_file, pred_file,
     print "F0.5        : %.4f" % metrics.fscore(tp, tn, fp + xyz, fn)
     print ""
 
+def evaluate(cnfs_file, pred_file, format, conf_set, thr, dif):
+    """
+    Evaluates classifier's predictions according to F_0.5 score.
+    """
+    preds = parse_pred_file(pred_file, format, conf_set)
+    tp, tn, fp, fn, xyz = evaluate_by_confusion_matrix(cnfs_file, preds, thr, dif)
+
+    return (metrics.precision(tp, tn, fp + xyz, fn),
+            metrics.recall(tp, tn, fp + xyz, fn),
+            metrics.fscore(tp, tn, fp + xyz, fn))
 
 def evaluate_by_confusion_matrix(cnfs_file, preds, 
                                  thr=None, dif=None):
@@ -93,4 +91,3 @@ def evaluate_by_confusion_matrix(cnfs_file, preds,
         .format(tp, tn, fp, fn, xyz))
 
     return (tp, tn, fp, fn, xyz)
-
