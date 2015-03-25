@@ -2,6 +2,7 @@
 
 import os
 import sys
+import argparse
 
 from logger import log
 
@@ -60,6 +61,4 @@ def parse_user_arguments():
 
 
 if __name__ == '__main__':
-    import argparse
-
     main()

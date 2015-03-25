@@ -14,8 +14,7 @@ from logger import log
 FORMATS_NEEDED_NORMALIZATION = ['vw']
 
 
-def iterate_text_confs_and_preds(text_file, cnfs_file, predictions,
-                                 threshold=None, difference=None):
+def iterate_text_confs_and_preds(text_file, cnfs_file, preds):
     text_io = open(text_file)
     cnfs_io = open(cnfs_file)
 
@@ -24,35 +23,32 @@ def iterate_text_confs_and_preds(text_file, cnfs_file, predictions,
     cnfs_n, i, j, err, cor, _ = parse_conf_line(cnfs_io.readline())
 
     for line in text_io:
-        confusinos = []
-        answers = []
+        tokens = line.strip().split()
+        pred_data = []
 
         while cnfs_n == n:
-            confusions.append( (i, j, err, cor) )
-            answers.append( (i, j, predictions[i]) )
+            pred_data.append( (i, j, err, cor, preds[i]) )
             cnfs_n, i, j, err, cor, _ = parse_conf_line(cnfs_io.readline())
             m += 1
         
-        yield (n, line.strip(), confusions, answers)
+        yield (n, line.strip(), pred_data)
         n += 1
 
     text_io.close()
     cnfs_io.close()
     
 
-def iterate_confs_and_preds(cnfs_file, predictions, 
-                            threshold=None, difference=None):
+def iterate_confs_and_preds(cnfs_file, preds, threshold=None, difference=None):
 
     with open(cnfs_file) as cnfs_io:
         for i, line in enumerate(cnfs_io):
             _, _, _, err, cor, _ = parse_conf_line(line)
-            pred = get_best_prediction(predictions[i], threshold, difference)
+            pred = get_best_prediction(err, preds[i], threshold, difference)
 
             yield (err, cor, pred)
 
-def get_best_prediction(answers, threshold=None, difference=None):
+def get_best_prediction(err, answers, threshold=None, difference=None):
     pred, confidence = find_best_answer(answers)
-    err, _, pred = err.lower(), cor.lower(), pred.lower()
 
     if threshold and confidence:
         if confidence < threshold:
@@ -67,6 +63,8 @@ def get_best_prediction(answers, threshold=None, difference=None):
 
 
 def parse_pred_file(pred_file, format, conf_set):
+    log.debug("parsing prediction file: {} ({})".format(pred_file, format))
+
     conf_set = ConfusionSet(conf_set)
     predictions = []
 
@@ -133,7 +131,7 @@ def parse_pred_file(pred_file, format, conf_set):
     return predictions
 
 def __number_of_predictions(pred_file, format):
-    num_of_lines = wc(pred_file)
+    num_of_lines = cmd.wc(pred_file)
     if format == 'libsvm':
         return num_of_lines - 1
     return num_of_lines
