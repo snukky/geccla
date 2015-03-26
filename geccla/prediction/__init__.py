@@ -147,6 +147,7 @@ def sort_answers(answers):
 
 
 def normalize_predictions(preds):
+    log.info("sigmoid normalization of predictions")
     nrm_preds = []
     for answers in preds:
         nrm_preds.append({ word: __sigmoid(value) 

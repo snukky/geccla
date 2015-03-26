@@ -43,11 +43,12 @@ def restore_sentence_case(sent, orig_sent):
     new_toks = []
      
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
-        log.debug(u"  {}: ({},{}) '{}' -> ({},{}) '{}'" \
-            .format(tag, 
-                    i1, i2, ' '.join(toks[i1:i2]), 
-                    j1, j2, ' '.join(orig_toks[j1:j2])) \
-            .encode('utf8', 'replace'))
+        if tag != 'equal':
+            log.debug(u"  {}: ({},{}) '{}' -> ({},{}) '{}'" \
+                .format(tag, 
+                        i1, i2, ' '.join(toks[i1:i2]), 
+                        j1, j2, ' '.join(orig_toks[j1:j2])) \
+                .encode('utf8', 'replace'))
 
         if tag == 'equal':
             new_toks += orig_toks[j1:j2]
@@ -71,10 +72,14 @@ def restore_sentence_case(sent, orig_sent):
 
         elif tag == 'insert':
             if i1 == 0 and is_capitalized(orig_toks[j1]) and \
-              is_lowercased(orig_toks[j2]):
+                    is_lowercased(orig_toks[j2]):
                 orig_toks[j2] = orig_toks[j2].capitalize()
 
-    return ' '.join(new_toks)
+        #log.debug('    : {}'.format(' '.join(new_toks)))
+
+    new_sent = ' '.join(new_toks)
+    log.debug("sent: {}".format(new_sent))
+    return new_sent
 
 def restore_word_case(tok, orig_tok):
     if tok.lower() == orig_tok.lower():

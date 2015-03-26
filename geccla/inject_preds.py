@@ -30,14 +30,14 @@ def parse_user_arguments():
     req = parser.add_argument_group("required arguments")
     req.add_argument('-c', '--confusion-set', required=True, type=str, 
         help="confusion set as comma-separated list of words")
-    req.add_argument('-f', '--format', required=True, choices=FORMATS, \
+    req.add_argument('-f', '--format', required=True, choices=FORMATS,
         help="classifier algorithm")
 
     eval = parser.add_argument_group("evaluation arguments")
-    eval.add_argument('-t', '--threshold', type=float, \
+    eval.add_argument('-t', '--threshold', type=float,
         help="minimum classifier confidence")
-    eval.add_argument('-d', '--difference', type=float, \
-        help="minimum confidence difference between best and second" \
+    eval.add_argument('-d', '--difference', type=float,
+        help="minimum confidence difference between best and second"
         " classifier prediction") 
 
     return parser.parse_args()

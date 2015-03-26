@@ -16,8 +16,9 @@ from logger import log
 
 class OutputFormatter():
     
-    def __init__(self, conf_set):
+    def __init__(self, conf_set, restore_case=True):
         self.confusion_set = ConfusionSet(conf_set)
+        self.restore_case = restore_case
 
     def text_output(self, text_file, cnfs_file, pred_file, format, 
                                  threshold, difference, 
@@ -28,14 +29,13 @@ class OutputFormatter():
         for n, text, data in iterate_text_confs_and_preds(text_file, cnfs_file, preds):
             log.debug("{n}: {txt}".format(n=n, txt=text))
 
-            yield self.__format_sentence(text.split(), data, 
-                                         threshold, difference)
+            yield self.__format_sentence(text, data, threshold, difference)
 
-    def __format_sentence(self, sent, data, thr=None, dif=None):
+    def __format_sentence(self, sent, data, threshold=None, difference=None):
         tokens = sent.split()
 
         for i, j, err, _, answers in data:
-            pred = get_best_prediction(err, answers, thr, dif)
+            pred = get_best_prediction(err, answers, threshold, difference)
     
             real_err = ' '.join(tokens[i:j])
             if not self.confusion_set.include(real_err):
@@ -53,4 +53,7 @@ class OutputFormatter():
                 tokens[i] = pred
     
         new_sent = re.sub(r'\s\s+' , ' ', ' '.join(tokens))
-        return restore_sentence_case(sent, new_sent)
+
+        if self.restore_case:
+            return restore_sentence_case(new_sent, sent)
+        return new_sent
