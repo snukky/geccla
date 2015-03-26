@@ -9,9 +9,10 @@ from evaluation.grid_search import run_grid_search
 def main():
     args = parse_user_arguments()
 
-    thr, dif = run_grid_search(args.format,
-                               args.cnfs_file, args.pred_file, args.grid_file,
-                               args.steps)
+    result = run_grid_search(args.confusion_set, args.format,
+                             args.cnfs_file, args.pred_file, args.grid_file,
+                             args.steps)
+    print "\t".join(map(str, result))
 
 
 def parse_user_arguments():

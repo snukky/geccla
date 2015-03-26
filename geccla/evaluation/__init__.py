@@ -10,8 +10,8 @@ from evaluation import metrics
 from logger import log
 
 
-def print_complete_evaluation(cnfs_file, pred_file, 
-                              format, conf_set, 
+def print_complete_evaluation(conf_set, format, 
+                              cnfs_file, pred_file, 
                               thr, dif):
 
     preds = parse_pred_file(pred_file, format, conf_set)
@@ -49,11 +49,10 @@ def print_complete_evaluation(cnfs_file, pred_file,
     print "F0.5        : %.4f" % metrics.fscore(tp, tn, fp + xyz, fn)
     print ""
 
-def evaluate(cnfs_file, pred_file, format, conf_set, thr, dif):
+def evaluate(cnfs_file, preds, thr, dif):
     """
     Evaluates classifier's predictions according to F_0.5 score.
     """
-    preds = parse_pred_file(pred_file, format, conf_set)
     tp, tn, fp, fn, xyz = evaluate_by_confusion_matrix(cnfs_file, preds, thr, dif)
 
     return (metrics.precision(tp, tn, fp + xyz, fn),

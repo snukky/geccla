@@ -8,9 +8,10 @@ from evaluation import print_complete_evaluation
 
 def main():
     args = parse_user_arguments()
-    print_complete_evaluation(args.cnfs_file, args.pred_file, 
-                              args.format, args.confusion_set,
+    print_complete_evaluation(args.confusion_set, args.format,
+                              args.cnfs_file, args.pred_file, 
                               args.threshold, args.difference)
+
   
 def parse_user_arguments():
     parser = argparse.ArgumentParser()
