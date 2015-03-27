@@ -14,10 +14,10 @@ from logger import log
 class ConfusionMatrix():
     
     def __init__(self, conf_set, cnfs_file):
-        self.matrix = self.__build_matrix(cnfs_file)
         self.confusion_set = ConfusionSet(conf_set)
+        self.matrix = self.__build_matrix(cnfs_file)
     
-    def print_stats(matrix):
+    def print_stats(self):
         self.print_matrix()
         
         num_of_confs = self.num_of_confs()
@@ -28,12 +28,13 @@ class ConfusionMatrix():
         print "AB edits :", self.num_of_AB_confs()
         print "ER       : %.3f %%" % self.error_rate()
     
-    def print_matrix(format_function=lambda x: str(x)):
-        print "\t".join([''] + self.confusion_set.as_list())
+    def print_matrix(self, format_function=lambda x: str(x)):
+        print "\t |", "\t".join(self.confusion_set.as_list())
+        print "-------- |", "-" * (self.confusion_set.size())*9
         for err in self.confusion_set:
-            print err + "\t",
+            print err + "\t |",
             for cor in self.confusion_set:
-                print format_function(matrix[err][cor]), "\t",
+                print format_function(self.matrix[err][cor]), "\t",
             print "\n",
         print ''
     
@@ -53,7 +54,7 @@ class ConfusionMatrix():
     def __build_matrix(self, cnfs_file):
         output = cmd.run("cat {0} | tr -s '|||' '\t' | cut -f3,4 | "
             "sort | uniq -c".format(cnfs_file))
-        log.debug(output)
+        log.debug("raw edit counts:\n{}".format(output))
     
         matrix = {}
         for err in self.confusion_set:
@@ -64,7 +65,7 @@ class ConfusionMatrix():
         for line in output.strip().split("\n"):
             count, err, cor = line.lower().split()
             if err not in matrix:
-                matrix[err] = {}
-            matrix[err][cor] = int(count)
+                matrix[err] = {cor: 0}
+            matrix[err][cor] += int(count)
     
         return matrix

@@ -5,10 +5,11 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-import config
-
 from collections import OrderedDict
 from cmd import wc
+
+from logger import log
+import config
 
 
 class LBJChunker():
@@ -80,6 +81,7 @@ class LBJChunker():
         outfile = file + '.chunks'
 
         if not os.path.isfile(outfile) or wc(file) != wc(outfile):
+            log.debug("chunking file {}".format(file))
             os.system("cat {0} | {1} {2} > {3}".format(file, \
                 self.parallel_cmd, self.chunker_cmd, outfile))
         

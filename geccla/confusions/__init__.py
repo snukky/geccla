@@ -43,6 +43,8 @@ def __format_conf_features(features={}):
                       for key, val in features.iteritems() ])
 
 def __escape_chars(text):
+    if not text:
+        return text
     return text.replace(' ', '_').replace('=', '<eq>')
 
 

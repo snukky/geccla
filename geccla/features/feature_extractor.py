@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from logger import log
 
 from collections import OrderedDict
+from features import sum_feature_sets
 from confusions import iterate_text_and_confs
 
 from taggers.pos_tagger import StanfordPOSTagger as POSTagger

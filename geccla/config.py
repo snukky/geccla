@@ -32,6 +32,9 @@ class TOOLS:
 class FILES:
     WORD_CLASSES        = '/home/snukky/Korpusy/word2vec/classes.moses.lc.wc'
 
+    MASS_NOUNS          = '{}/features/data/mass-nouns.wiktionary.txt'.format(ROOT_DIR)
+    COUNTABLE_NOUNS     = '{}/features/data/countable-nouns.wiktionary.txt'.format(ROOT_DIR)
+
 
 class CONLL:
     ORIGINAL_TOKS = {

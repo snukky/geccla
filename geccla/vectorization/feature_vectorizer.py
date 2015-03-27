@@ -11,15 +11,15 @@ from confusions import parse_conf_line
 from logger import log
 
 from classification import FORMATS
-from features import FEATURE_SETS
 
+from features import FEATURE_SETS
 
 
 class FeatureVectorizer():
     
     def __init__(self, conf_set, 
                        feat_file=None, 
-                       min_feat_count=2, 
+                       min_feat_count=5, 
                        max_vec_size=500000):
 
         self.confusion_set = ConfusionSet(conf_set)
