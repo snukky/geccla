@@ -12,7 +12,7 @@ from preprocess.letter_case import restore_file_case
 
 def main():
     args = parse_user_arguments()
-    for line in restore_case(args.text_file, args.orig_file):
+    for line in restore_file_case(args.text_file, args.orig_file):
         print line
 
 

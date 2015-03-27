@@ -102,3 +102,4 @@ def is_uppercased(tok):
 
 def is_capitalized(tok):
     return tok == tok.capitalize()
+

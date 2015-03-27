@@ -13,7 +13,7 @@ from logger import log
 class StanfordPOSTagger():
 
     def __init__(self, threads=8):
-        self.tagger_dir = config.TOOLS.STANFORD_TOKENIZER_DIR
+        self.tagger_dir = config.TOOLS.STANFORD_TAGGER_DIR
         self.separator = '|'
         self.threads = threads
 

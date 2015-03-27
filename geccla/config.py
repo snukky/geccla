@@ -2,6 +2,7 @@ import os
 
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
+
 SCRIPTS_DIR = os.path.abspath(os.path.join(ROOT_DIR, '..', 'scripts'))
 
 THREADS = 8
@@ -16,17 +17,20 @@ class CLASSIFIERS:
 
 
 class TOOLS:
-    PARALLEL    = 'parallel --no-notice --pipe --keep-order --block 2M -j {}'.format(THREADS)
+    PARALLEL            = 'parallel --no-notice --pipe --keep-order --block 2M -j {}'.format(THREADS)
 
-    STANFORD_TOKENIZER_DIR  = '/home/snukky/Programy/stanford-postagger-2014-01-04'
-    LBJ_CHUNKER = 'java -Xmx512m -cp $CLASSPATH:{}/taggers/lbj FixedLBJChunker'.format(ROOT_DIR)
+    STANFORD_TAGGER_DIR = '/home/snukky/Programy/stanford-postagger-2014-01-04'
+    LBJ_CHUNKER         = 'java -Xmx512m -cp $CLASSPATH:{}/taggers/lbj FixedLBJChunker'.format(ROOT_DIR)
 
-    MOSES_DIR   = '/home/romang/mosesdecoder'
-    LOWERCASER  = 'perl /home/romang/mosesdecoder/scripts/tokenizer/lowercase.perl'
+    MOSES_DIR           = '/home/romang/mosesdecoder'
+    LOWERCASER          = 'perl /home/romang/mosesdecoder/scripts/tokenizer/lowercase.perl'
+
+    NLTK_TOKENIZER      = '{}/nltk-tok'.format(SCRIPTS_DIR)
+    NLTK_DETOKENIZER    = '{}/nltk-detok'.format(SCRIPTS_DIR)
 
 
 class FILES:
-    WORD_CLASSES = '/home/snukky/Korpusy/word2vec/classes.moses.lc.wc'
+    WORD_CLASSES        = '/home/snukky/Korpusy/word2vec/classes.moses.lc.wc'
 
 
 class CONLL:
