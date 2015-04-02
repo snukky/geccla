@@ -20,11 +20,15 @@ class WordClassTagger:
     def tag(self, tokens):
         return [self.dic.get(tok.lower(), self.unknown_wc) for tok in tokens]
 
-    def tag_file(self, tok_file, awc_file=None):
+    def tag_file(self, tok_file, awc_file=None, lazy=True):
         if awc_file is None:
             awc_file = tok_file + '.awc'
 
-        log.debug("tagging file {} into {}".format(tok_file, awc_file))
+        if lazy and os.path.exists(awc_file):
+            log.info("tagging skipped because file {} exists".format(awc_file))
+            return awc_file
+
+        log.info("tagging file {} into {}".format(tok_file, awc_file))
         output = open(awc_file, 'w+')
 
         with open(tok_file) as input:
@@ -35,7 +39,7 @@ class WordClassTagger:
         return awc_file
 
     def __create_dictionary(self):
-        log.debug("loading dictionary...")
+        log.info("loading dictionary {}...".format(self.dictionary))
         self.dic = {}
         with open(self.dictionary) as f:
             for line in f:

@@ -17,12 +17,16 @@ class StanfordPOSTagger():
         self.separator = '|'
         self.threads = threads
 
-    def tag_file(self, tok_file, pos_file=None, lazy=False):
+    def tag_file(self, tok_file, pos_file=None, lazy=True):
         if pos_file is None:
             pos_file = tok_file + '.pos'
         ann_file = pos_file + '.ann' 
 
-        log.debug("tagging file {} into {} with annotations".format(tok_file, ann_file))
+        if lazy and os.path.exists(pos_file):
+            log.info("tagging skipped because file {} exists".format(pos_file))
+            return pos_file
+            
+        log.info("tagging file {} into {}".format(tok_file, pos_file))
 
         cmd = "java -mx1025m -cp {0}/stanford-postagger.jar: " \
             "edu.stanford.nlp.tagger.maxent.MaxentTagger " \
@@ -31,8 +35,8 @@ class StanfordPOSTagger():
             "-textFile {1} -nthreads {4} 2> /dev/null > {2}" \
             .format(self.tagger_dir, tok_file, ann_file, self.separator, 
                     self.threads)
-
         os.popen(cmd)
+
         return self.__extract_pos_tags_in_file(ann_file, pos_file)
 
     def __extract_pos_tags_in_file(self, ann_file, pos_file):
