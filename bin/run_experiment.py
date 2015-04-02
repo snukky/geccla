@@ -213,17 +213,17 @@ def evaluate_predictions(options, filepath):
         .format(root=config.ROOT_DIR, cs=CONFUSION_SET, frm=FORMAT, 
                 opts=options, fp=filepath))
 
-def run_grid_search(algorithm, filepath):
+def run_grid_search(filepath):
     log.debug("running grid searching on {0}.pred and {0}.cnfs".format(filepath))
 
     assert_file_exists(filepath + '.cnfs')
     assert_file_exists(filepath + '.pred')
 
-    output = cmd.run("{root}/tune_gs.py -c {cs} -f {frm} -g {fp}.eval.grid {fp}.cnfs {fp}.pred" \
+    output = cmd.run("{root}/tune_preds.py -c {cs} -f {frm} -g {fp}.eval.grid {fp}.cnfs {fp}.pred" \
         .format(root=config.ROOT_DIR, cs=CONFUSION_SET, frm=FORMAT, fp=filepath))
 
     thr, dif = output.split("\t")[:2]
-    debug("grid search found threshold options: t={} d={}".format(thr, dif))
+    log.debug("grid search found threshold options: t={} d={}".format(thr, dif))
 
     return " -t {} -d {}".format(thr, dif)
 
@@ -234,7 +234,7 @@ def evaluate_on_conll_data(filepath, year):
 
     for name, m2_file in config.CONLL.TEST_SETS[year].iteritems():
         orig_tok = config.CONLL.ORIGINAL_TOKS[year]
-        cmd.run("{root}/eval_m2.py -o {orig} -t {fp}.out.retok {fp}.out {m2} >> {fp}.eval" \
+        cmd.run("{root}/eval_m2.py -o {orig} -t {fp}.out.retok {fp}.out {m2} >> {fp}.eval.m2" \
             .format(root=config.ROOT_DIR, orig=orig_tok, m2=m2_file, fp=filepath))
     
     cmd.wdiff(filepath + '.out', filepath + '.out.retok')
@@ -242,6 +242,26 @@ def evaluate_on_conll_data(filepath, year):
     orig_tok = config.CONLL.ORIGINAL_TOKS[year]
     cmd.ln(filepath + '.out.retok', filepath + '.out.conll')
     cmd.wdiff(orig_tok, filepath + '.out.conll')
+
+def run_conll_grid_search():
+    log.debug("running CoNLL grid searching on {0}.pred and {0}.cnfs".format(filepath))
+
+    assert_file_exists(filepath + '.in')
+    assert_file_exists(filepath + '.cnfs')
+    assert_file_exists(filepath + '.pred')
+
+    m2_file = config.CONLL.TEST_SETS[year]['allerrors']
+    orig_tok = config.CONLL.ORIGINAL_TOKS[year]
+
+    output = cmd.run("{root}/tune_m2.py -c {cs} -f {frm} -g {fp}.eval.m2.grid -w {fp}.m2gs "
+        "--m2 {m2} -o {orig} {fp}.in {fp}.cnfs {fp}.pred" \
+        .format(root=config.ROOT_DIR, cs=CONFUSION_SET, frm=FORMAT, 
+                m2=m2_file, orig=orig_tok, fp=filepath))
+
+    thr, dif = output.split("\t")[:2]
+    log.debug("CoNLL grid search found threshold options: t={} d={}".format(thr, dif))
+
+    return " -t {} -d {}".format(thr, dif)
 
 
 def assert_file_exists(file):
