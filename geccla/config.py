@@ -19,7 +19,7 @@ class CLASSIFIERS:
 class TOOLS:
     PARALLEL            = 'parallel --no-notice --pipe --keep-order --block 2M -j {}'.format(THREADS)
 
-    STANFORD_TAGGER_DIR = '/home/snukky/Programy/stanford-postagger-2014-01-04'
+    STANFORD_TAGGER_DIR = '/home/romang/tools/stanford-postagger-full-2014-01-04'
     LBJ_CHUNKER         = 'java -Xmx512m -cp $CLASSPATH:{}/taggers/lbj FixedLBJChunker'.format(ROOT_DIR)
 
     MOSES_DIR           = '/home/romang/mosesdecoder'
@@ -30,7 +30,7 @@ class TOOLS:
 
 
 class FILES:
-    WORD_CLASSES        = '/home/snukky/Korpusy/word2vec/classes.moses.lc.wc'
+    WORD_CLASSES        = '/home/romang/data/word2vec/classes.moses.lc.wc'
 
     MASS_NOUNS          = '{}/features/data/mass-nouns.wiktionary.txt'.format(ROOT_DIR)
     COUNTABLE_NOUNS     = '{}/features/data/countable-nouns.wiktionary.txt'.format(ROOT_DIR)

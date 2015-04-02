@@ -6,6 +6,11 @@
 geccla/taggers/lbj/*.class
 tmp/*
 
+# Experiments
+expt/nucle*
+expt/test*
+expt/lang8*
+
 # Vim
 [._]*.s[a-w][a-z]
 [._]s[a-w][a-z]
