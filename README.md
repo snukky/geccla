@@ -1,5 +1,7 @@
 # GECcla
 
+The project is at early stage of development.
+
 TODO: Write a project description
 
 ## Installation
