@@ -65,7 +65,7 @@ def evaluate_by_confusion_matrix(cnfs_file, preds,
     Returns a tuple (TP, TN, FP, FN, XYZ), where XYZ for correction task
     is equal to FP and for detection task is equal to TP.
     """
-    log.debug("evaluating by confusion matrix: {}".format(cnfs_file))
+    log.debug("confusion matrix scores: {}".format(cnfs_file))
 
     tp, fp, tn, fn, xyz = 0, 0, 0, 0, 0
     results = iterate_confs_and_preds(cnfs_file, preds, thr, dif)

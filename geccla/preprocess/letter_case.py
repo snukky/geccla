@@ -30,9 +30,10 @@ def restore_file_case(text_file, orig_file):
     orig_io.close()
 
 def restore_sentence_case(sent, orig_sent):
-    log.debug(u'toks: {}'.format(sent).encode('utf8', 'replace'))
-    log.debug(u'orig: {}'.format(orig_sent).encode('utf8', 'replace'))
-    
+    if sent != orig_sent:
+        log.debug(u'toks: {}'.format(sent).encode('utf8', 'replace'))
+        log.debug(u'orig: {}'.format(orig_sent).encode('utf8', 'replace'))
+
     toks = sent.split()
     orig_toks = orig_sent.split()
 
@@ -43,7 +44,7 @@ def restore_sentence_case(sent, orig_sent):
     new_toks = []
      
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
-        if tag != 'equal':
+        if tag != 'equal' and sent != orig_sent:
             log.debug(u"  {}: ({},{}) '{}' -> ({},{}) '{}'" \
                 .format(tag, 
                         i1, i2, ' '.join(toks[i1:i2]), 
@@ -78,7 +79,10 @@ def restore_sentence_case(sent, orig_sent):
         #log.debug('    : {}'.format(' '.join(new_toks)))
 
     new_sent = ' '.join(new_toks)
-    log.debug("sent: {}".format(new_sent))
+    
+    if sent != orig_sent:
+        log.debug("sent: {}".format(new_sent))
+
     return new_sent
 
 def restore_word_case(tok, orig_tok):

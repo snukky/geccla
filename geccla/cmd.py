@@ -10,7 +10,9 @@ def run(cmd):
 def wc(file):
     if not os.path.exists(file) or os.path.isdir(file):
         return None
-    return int(os.popen('wc -l ' + file).read().strip().split()[0])
+    count = int(os.popen('wc -l ' + file).read().strip().split()[0])
+    log.info("file {} has {} lines".format(file, count))
+    return count
 
 def ln(file, link):
     run("ln -s {} {}".format(os.path.abspath(file), os.path.abspath(link)))

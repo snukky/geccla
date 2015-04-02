@@ -20,23 +20,54 @@ def run_grid_search(conf_set, format,
                     cnfs_file, pred_file, grid_file=None,
                     num_of_steps=10):
     
+    preds = parse_pred_file(pred_file, format, conf_set)
+    minmax_params = find_minmax_params(preds)
+
+    generator = grid_search_generator(minmax_params, num_of_steps, grid_file)
+    thrdif = None
+
+    while True:
+        thrdif = generator.next()
+        
+        log.debug("    THRDIF: {}".format(thrdif))
+
+        if not thrdif or len(thrdif) == 3:
+            break
+
+        prec, rec, fscore =  evaluate(cnfs_file, preds, *thrdif)
+        generator.send( (prec, rec, fscore) )
+
+    if thrdif and len(thrdif) == 3:
+        return thrdif
+    return generator.next()
+
+def grid_search_generator(min_max_params=(0.0, 1.0, 0.0, 1.0), 
+                          num_of_steps=10,
+                          grid_file=None):
+
     if grid_file:
         grid_io = open(grid_file, 'w+')
         grid_io.write("# thr\tdif\tP\tR\tF0.5\n")
 
-    preds = parse_pred_file(pred_file, format, conf_set)
-    param_sets = calculate_param_sets(preds, num_of_steps)
+    param_sets = calculate_param_sets(min_max_params, num_of_steps)
     results = {}
 
     for thr, dif in param_sets:
-        prec, rec, fscore = evaluate(cnfs_file, preds, thr, dif)
-        
+        response = yield (thr, dif)
+
+        if response is not None:
+            prec, rec, fscore = response
+        else:
+            fscore = 0.0
+
         results[(thr, dif)] = fscore
 
         if grid_file and fscore != 0.0:
             log.debug(__format_grid_line(thr, dif, prec, rec, fscore))
             grid_io.write(__format_grid_line(thr, dif, prec, rec, fscore) + "\n")
     
+    yield None
+   
     best_results = find_best_results(results)
 
     if grid_file:
@@ -51,19 +82,19 @@ def run_grid_search(conf_set, format,
     log.info("best result: t={thr:.4f} d={dif:.4f} F0.5={fscore:.4f}" \
         .format(thr=thr, dif=dif, fscore=fscore))
 
-    return (thr, dif, fscore)
+    yield (thr, dif, fscore)
 
 def __format_grid_line(thr, dif, prec=None, rec=None, fscore=None):
     if not prec or not rec:
-        return "t={thr:.4f} d={dif:.4f} F0.5={fscore:.4f}" \
+        return "t={thr:.4f}\td={dif:.4f}\tF0.5={fscore:.4f}" \
             .format(thr=thr, dif=dif, fscore=fscore) 
-    return "t={thr:.4f} d={dif:.4f} P={prec:.4f} R={rec:.4f} F0.5={fscore:.4f}" \
+    return "t={thr:.4f}\td={dif:.4f}\tP={prec:.4f}\tR={rec:.4f}\tF0.5={fscore:.4f}" \
         .format(thr=thr, dif=dif, prec=prec, rec=rec, fscore=fscore)
 
-def calculate_param_sets(preds, num_of_steps):
+def calculate_param_sets(min_max_params=(0.0, 1.0, 0.0, 1.0), num_of_steps=10):
     log.debug("number of steps: {}".format(num_of_steps))
 
-    min_thr, max_thr, min_dif, max_dif = find_minmax_params(preds)
+    min_thr, max_thr, min_dif, max_dif = min_max_params
     
     log.debug("min/max threshold: {}/{}".format(min_thr, max_thr))
     log.debug("min/max difference: {}/{}".format(min_dif, max_dif))
