@@ -8,14 +8,11 @@ if os.path.dirname(__file__) not in sys.path:
 from preprocess.letter_case import restore_file_case
 from prediction.output_formatter import inject_predictions
 from prediction import parse_pred_file
+from evaluation.m2scorer_fork import m2scorer
 
 import cmd
 from logger import log
 import config
-
-sys.path.insert(0, config.SCRIPTS_DIR)
-
-from m2scorer_fork import m2scorer
 
 
 def run_m2_grid_search(conf_set, format, 
@@ -82,4 +79,6 @@ def evaluate_m2(text_file, m2_file, orig_file=None, retok_file=None):
         log.error("Input file and M2 file differ in number of sentences: "
             "{} != {}".format(num_of_lines, num_of_sents))
 
-    return m2scorer(input_file, m2_file, beta=0.5, max_unchanged_words=3)
+    return m2scorer(input_file, m2_file, 
+                    beta=0.5, max_unchanged_words=3,
+                    forks=config.THREADS)

@@ -758,13 +758,14 @@ def forker(forks, system_path, m2_path, beta, max_unchanged_words,
 
 
 def m2scorer(system_file, gold_file,
-             max_unchanged_words=3, beta=0.5, ignore_whitespace_casing=False):
+             max_unchanged_words=3, beta=0.5, ignore_whitespace_casing=False,
+             forks=cpu_count()):
     """
     An interface method for forked version of M^2 scoring script.
     """
-    return forker(cpu_count(), system_file, gold_file,
+    return forker(forks, system_file, gold_file,
                   beta, max_unchanged_words, ignore_whitespace_casing)
-      
+
 
 if __name__ == "__main__":
     max_unchanged_words = 2
