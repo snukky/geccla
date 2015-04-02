@@ -18,7 +18,7 @@ def main():
     
     if args.artordet:
         finder = ArtOrDetFinder()
-        confs = finder.find_confusion_artordets(args.input_file)
+        confs = finder.find_confusion_artordets(args.input_file, args.levels)
     elif args.ngrams_prefix:
         finder = NullFinder(args.confusion_set)
         confs = finder.find_confusion_nulls(args.input_file, 
@@ -42,8 +42,9 @@ def parse_user_arguments():
         help="confusion set as comma-separated list of words")
     parser.add_argument('-n', '--ngrams-prefix', type=str,
         help="prefix for files with list of n-grams")
-    parser.add_argument('-l', '--levels', nargs='+', default=['tok', 'awc'],
-        choices=NullFinder.LEVELS, help="levels of n-grams extraction")
+    parser.add_argument('-l', '--levels', type=str,
+        help="levels of n-grams extraction as comma-separated list "
+             "(or numerical value when --artordet is active)")
 
     parser.add_argument('--artordet', action='store_true',
         help="enable enhanced finding rules for articles and determiners")
@@ -56,7 +57,16 @@ def parse_user_arguments():
         raise ArgumentError("argument --ngrams-prefix requires --confusion-set")
 
     if args.artordet:
-        args.confusion_set = 'a,the,'
+        args.confusion_set = 'a,an,the,'
+        if not args.levels:
+            args.levels = 2
+        args.levels = int(args.levels)
+    else:
+        args.levels = list(set(args.levels.split(',')))
+        if not all(lvl in NullFinder.LEVELS for lvl in args.levels):
+            raise ArgumentError("allowed values for --levels argument are {}" \
+                .format(', '.join(NullFinder.LEVELS)))
+
     return args
 
 

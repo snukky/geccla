@@ -8,7 +8,7 @@ from logger import log
 from confusions.basic_finder import BasicFinder
 from taggers.lbj_chunker import LBJChunker
 
-import taggers as tags
+import taggers.pos_helper as tags
 import cmd
 
 
@@ -19,7 +19,7 @@ class ArtOrDetFinder(BasicFinder):
         self.chunker = LBJChunker()
 
     def find_confusion_artordets(self, corpus, level=2):
-        err_text = shell.source_side_of_file(corpus)
+        err_text = cmd.source_side_of_file(corpus)
         all_chunks = self.chunker.chunks_and_pos_tags(err_text)
 
         with open(corpus) as corpus_io:

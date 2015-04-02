@@ -40,10 +40,11 @@ class NullFinder(BasicFinder):
         """
         self.__load_ngrams(ngrams_prefix, levels)
         files = self.__tag_file(corpus, levels)
+        n = 0
 
         for level in levels:
             files[level] = open(files[level])
-        
+
         with open(corpus) as corpus_io:
             for s, line in enumerate(corpus_io):
                 err_toks, edits = self.parse_corpus_line(line)
@@ -52,8 +53,11 @@ class NullFinder(BasicFinder):
 
                 confs = self.__find_nulls(err_toks, all_tags, edits)
                 for i, j, err, cor in confs:
+                    n += 1
                     yield (s, i, j, err, cor)
-                    
+        
+        log.info("found {} confusion examples".format(n))
+
         for level in levels:
             files[level].close()
     

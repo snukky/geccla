@@ -25,8 +25,8 @@ def parse_user_arguments():
         help="confusion set as comma-separated list of words")
     main.add_argument('-n', '--ngrams-prefix', type=str, required=True,
         help="prefix for files with list of n-grams")
-    main.add_argument('-l', '--levels', nargs='+', default=['tok', 'awc'],
-        choices=NullFinder.LEVELS, help="levels of n-grams extraction")
+    main.add_argument('-l', '--levels', type=str, default='tok,awc',
+        help="levels of n-grams extraction as comma-separated list")
 
     train = parser.add_argument_group("training arguments")
     train.add_argument('--min-count', type=int, default=5,
@@ -38,8 +38,15 @@ def parse_user_arguments():
     train.add_argument('--no-clean', action='store_true', 
         help="do not remove temporary files")
 
-    return parser.parse_args()
+    args = parser.parse_args()
 
+    args.levels = list(set(args.levels.split(',')))
+
+    if not all(lvl in NullFinder.LEVELS for lvl in args.levels):
+        raise ArgumentError("allowed values for --levels argument are {}" \
+            .format(', '.join(NullFinder.LEVELS)))
+
+    return args
 
 if __name__ == '__main__':
     main()
