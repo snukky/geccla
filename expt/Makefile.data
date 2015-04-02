@@ -1,10 +1,10 @@
 
-CONLL_NUCLE_M2 = /home/snukky/Korpusy/nucle/nucle.m2
+CONLL_NUCLE_M2 = /home/romang/data/nucle/nucle.m2
 
-CONLL_TEST2013_M2 = /home/snukky/Korpusy/nucle/nucle.test2013.m2
-CONLL_TEST2014_M2 = /home/snukky/Korpusy/nucle/nucle.test2014.m2
+CONLL_TEST2013_M2 = /home/romang/data/nucle/nucle.test2013.m2
+CONLL_TEST2014_M2 = /home/romang/data/nucle/nucle.test2014.m2
 
-LANG8_NAIST = /data/lang8/lang8-naist.tok.clean.txt
+LANG8_NAIST = /home/romang/data/lang8/lang8-naist.nltktok.clean.txt
 
 
 # LANG8 NAIST

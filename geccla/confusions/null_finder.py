@@ -12,7 +12,7 @@ from taggers.wc_tagger import WordClassTagger as WCTagger
 
 from logger import log
 
-DEBUG_COUNTER = 10000
+DEBUG_COUNTER = 50000
 
 
 class NullFinder(BasicFinder):
@@ -48,7 +48,7 @@ class NullFinder(BasicFinder):
         with open(corpus) as corpus_io:
             for s, line in enumerate(corpus_io):
                 err_toks, edits = self.parse_corpus_line(line)
-                all_tags = { level : files[level].next().strip().split()
+                all_tags = { level : files[level].next().strip().lower().split()
                              for level in levels }
 
                 confs = self.__find_nulls(err_toks, all_tags, edits)
@@ -107,7 +107,8 @@ class NullFinder(BasicFinder):
 
                 for level in all_tags.keys():
                     tags = self.__add_boundaries(all_tags[level])
-                    if self.__ngram(j, tags, 0) in self.ngrams[level]:
+                    ngram = self.__ngram(j, tags, 0)
+                    if ngram is not None and ngram in self.ngrams[level]:
                         yield (i, i, '<null>', '<null>')
                         break
 
@@ -170,12 +171,12 @@ class NullFinder(BasicFinder):
                 words = line.strip().split()
 
                 for level in levels:
-                    tokens = tag_files[level].next().strip().split()
+                    tokens = tag_files[level].next().strip().lower().split()
                     ngrams = self.__extract_ngrams(words, tokens)
                     files[level].write("\n".join(ngrams) + "\n")
                 
                 if 0 == (i+1) % DEBUG_COUNTER:
-                    log.debug("[{}]".format(i+1))
+                    log.debug("training: [{}]".format(i+1))
 
         for level in levels:
             files[level].close()
@@ -200,7 +201,9 @@ class NullFinder(BasicFinder):
         for i, word in enumerate(tokens):
             j = i + self.left_context
             if self.confusion_set.include_in_non_nulls(word):
-                ngrams.append(self.__ngram(j, tags))
+                ngram = self.__ngram(j, tags)
+                if ngram is not None:
+                    ngrams.append(ngram)
         return ngrams
     
     def __add_boundaries(self, tokens):
@@ -208,8 +211,11 @@ class NullFinder(BasicFinder):
             + ['</s>'] * self.right_context
 
     def __ngram(self, i, tokens, length=1):
-        return ' '.join(tokens[i-self.left_context:i] \
-            + tokens[i+length:i+length+self.right_context])
+        grams = tokens[i-self.left_context:i] \
+            + tokens[i+length:i+length+self.right_context]
+        if len(grams) != (self.left_context + self.right_context):
+            return None
+        return ' '.join(grams)
 
     def __write_info_line(self, file, level):
         with open(file, 'w+') as f:

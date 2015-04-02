@@ -28,7 +28,7 @@ test2013.lang8.artordet.*.eval: test2013.artordet.*.cnfs test2013.lang8.*.cnfs
 
 test2013.lang8.*.cnfs: test2013.err lang8.ngrams.*
 	for level in $(LEVELS) ; do \
-		python ../geccla/find_confs.py -c a,an,the, -l $$level -n nucle.ngrams $(word 1,$^) > test2013.lang8.$$level.cnfs ; \
+		python ../geccla/find_confs.py -c a,an,the, -l $$level -n lang8.ngrams $(word 1,$^) > test2013.lang8.$$level.cnfs ; \
 	done
 
 
