@@ -3,26 +3,49 @@ include Makefile.data
 LEVELS = tok pos awc tok,pos tok,awc tok,pos,awc
 
 
-test2013.artordet.*.eval: test2013.artordet.*.cnfs test2013.nulls.*.cnfs
+# evaluation after training on NUCLE
+test2013.nucle.artordet.*.eval: test2013.artordet.*.cnfs test2013.nucle.*.cnfs
 	rm -f $@
 	for num in 1 2 3; do \
 		for level in $(LEVELS) ; do \
-			python ../scripts/eval_cnfs.py test2013.nulls.$$level.cnfs test2013.artordet.$$num.cnfs >> test2013.artordet.$$num.eval ; \
+			python ../scripts/eval_cnfs.py test2013.nucle.$$level.cnfs test2013.artordet.$$num.cnfs >> test2013.nucle.artordet.$$num.eval ; \
 		done \
 	done
 
+test2013.nucle.*.cnfs: test2013.err nucle.ngrams.*
+	for level in $(LEVELS) ; do \
+		python ../geccla/find_confs.py -c a,an,the, -l $$level -n nucle.ngrams $(word 1,$^) > test2013.nucle.$$level.cnfs ; \
+	done
+
+# evaluation after training on Lang8
+test2013.lang8.artordet.*.eval: test2013.artordet.*.cnfs test2013.lang8.*.cnfs
+	rm -f $@
+	for num in 1 2 3; do \
+		for level in $(LEVELS) ; do \
+			python ../scripts/eval_cnfs.py test2013.lang8.$$level.cnfs test2013.artordet.$$num.cnfs >> test2013.lang8.artordet.$$num.eval ; \
+		done \
+	done
+
+test2013.lang8.*.cnfs: test2013.err lang8.ngrams.*
+	for level in $(LEVELS) ; do \
+		python ../geccla/find_confs.py -c a,an,the, -l $$level -n nucle.ngrams $(word 1,$^) > test2013.lang8.$$level.cnfs ; \
+	done
+
+
+# gold standard
 test2013.artordet.*.cnfs: test2013.err
 	for num in 1 2 3 ; do \
 		python ../geccla/find_confs.py --artordet -l $$num $? > test2013.artordet.$$num.cnfs ; \
 	done
 
-test2013.nulls.*.cnfs: test2013.err nucle.ngrams.*
-	for level in $(LEVELS) ; do \
-		python ../geccla/find_confs.py -c a,an,the, -l $$level -n nucle.ngrams $(word 1,$^) > test2013.nulls.$$level.cnfs ; \
-	done
 
+# NUCLE n-grams
 nucle.ngrams.*: nucle.txt
 	python ../geccla/train_nulls.py -c a,an,the, -l tok,pos,awc -n nucle.ngrams $?
+
+# Lang8 n-grams
+lang8.ngrams.*: lang8.err
+	python ../geccla/train_nulls.py -c a,an,the, -l tok,pos,awc -n lang8.ngrams $?
 
 
 clean: 
