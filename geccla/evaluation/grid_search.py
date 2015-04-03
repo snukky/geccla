@@ -28,9 +28,6 @@ def run_grid_search(conf_set, format,
 
     while True:
         thrdif = generator.next()
-        
-        log.debug("    THRDIF: {}".format(thrdif))
-
         if not thrdif or len(thrdif) == 3:
             break
 
@@ -53,6 +50,8 @@ def grid_search_generator(min_max_params=(0.0, 1.0, 0.0, 1.0),
     results = {}
 
     for thr, dif in param_sets:
+        log.debug("threshold and difference: ({},{})".format(thr, dif))
+
         response = yield (thr, dif)
 
         if response is not None:
@@ -63,8 +62,10 @@ def grid_search_generator(min_max_params=(0.0, 1.0, 0.0, 1.0),
         results[(thr, dif)] = fscore
 
         if grid_file and fscore != 0.0:
-            log.debug(__format_grid_line(thr, dif, prec, rec, fscore))
-            grid_io.write(__format_grid_line(thr, dif, prec, rec, fscore) + "\n")
+            grid_line = __format_grid_line(thr, dif, prec, rec, fscore)
+
+            log.info(grid_line.replace("\t", " "))
+            grid_io.write(grid_line + "\n")
     
     yield None
    
@@ -92,24 +93,24 @@ def __format_grid_line(thr, dif, prec=None, rec=None, fscore=None):
         .format(thr=thr, dif=dif, prec=prec, rec=rec, fscore=fscore)
 
 def calculate_param_sets(min_max_params=(0.0, 1.0, 0.0, 1.0), num_of_steps=10):
-    log.debug("number of steps: {}".format(num_of_steps))
+    log.info("number of steps: {}".format(num_of_steps))
 
     min_thr, max_thr, min_dif, max_dif = min_max_params
     
-    log.debug("min/max threshold: {}/{}".format(min_thr, max_thr))
-    log.debug("min/max difference: {}/{}".format(min_dif, max_dif))
+    log.info("min/max threshold: {}/{}".format(min_thr, max_thr))
+    log.info("min/max difference: {}/{}".format(min_dif, max_dif))
 
     thr_step = (max_thr - min_thr) / float(num_of_steps)
     dif_step = (max_dif - min_dif) / float(num_of_steps)
 
-    log.debug("threshold step: {}".format(thr_step))
-    log.debug("difference step: {}".format(dif_step))
+    log.info("threshold step: {}".format(thr_step))
+    log.info("difference step: {}".format(dif_step))
 
     thrs = sorted(list(set([0.0] + __frange(min_thr, max_thr, thr_step))))
     difs = sorted(list(set([0.0] + __frange(min_dif, max_dif, dif_step))))
 
-    log.debug("threshold params: {}".format(thrs))
-    log.debug("difference params: {}".format(difs))
+    log.info("threshold params: {}".format(thrs))
+    log.info("difference params: {}".format(difs))
 
     return itertools.product(thrs, difs)
 

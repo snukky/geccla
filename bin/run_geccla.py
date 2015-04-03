@@ -83,9 +83,9 @@ def main():
             if args.grid_search:
                 new_evl_opts = run_grid_search(run_file)
 
-                cmd.ln(filepath + '.in', filepath + '.best.in')
-                cmd.ln(filepath + '.cnfs', filepath + '.best.cnfs')
-                cmd.ln(filepath + '.pred', filepath + '.best.pred')
+                cmd.ln(run_file + '.in', run_file + '.best.in')
+                cmd.ln(run_file + '.cnfs', run_file + '.best.cnfs')
+                cmd.ln(run_file + '.pred', run_file + '.best.pred')
 
                 evaluate_predictions(new_evl_opts, run_file + '.best')
                 inject_predictions(new_evl_opts, run_file + '.best')
@@ -243,8 +243,6 @@ def evaluate_predictions(options, filepath):
     assert_file_exists(filepath + '.cnfs')
     assert_file_exists(filepath + '.pred')
     
-    cmd.run("echo 'Accuracy evaluation on {0}.pred ({1})' >> {0}.eval" \
-        .format(filepath, options))
     cmd.run("{root}/eval_preds.py -c {cs} -f {frm} {opts} {fp}.cnfs {fp}.pred >> {fp}.eval" \
         .format(root=config.ROOT_DIR, cs=CONFUSION_SET, frm=FORMAT, 
                 opts=options, fp=filepath))

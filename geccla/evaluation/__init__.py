@@ -17,15 +17,12 @@ def print_complete_evaluation(conf_set, format,
     preds = parse_pred_file(pred_file, format, conf_set)
     tp, tn, fp, fn, xyz = evaluate_by_confusion_matrix(cnfs_file, preds, thr, dif)
     
-    print "### evaluation for file {}".format(cnfs_file)
+    print "### Evaluation of file {}".format(cnfs_file)
     print ""
 
-    if thr:
-        print "threshold   : %.4f " % thr
-    if dif:
-        print "difference  : %.4f " % dif
-    if thr or dif:
-        print ""
+    print "threshold   : %.4f " % (thr or 0)
+    print "difference  : %.4f " % (dif or 0)
+    print ""
 
     print "# Simple accuracy:"
     acc, aa, ab, skipped = metrics.edits_count(tp, tn, fp, fn, xyz)
@@ -65,7 +62,7 @@ def evaluate_by_confusion_matrix(cnfs_file, preds,
     Returns a tuple (TP, TN, FP, FN, XYZ), where XYZ for correction task
     is equal to FP and for detection task is equal to TP.
     """
-    log.debug("confusion matrix scores: {}".format(cnfs_file))
+    log.info("confusion matrix scores for: {}".format(cnfs_file))
 
     tp, fp, tn, fn, xyz = 0, 0, 0, 0, 0
     results = iterate_confs_and_preds(cnfs_file, preds, thr, dif, lowercase=True)
@@ -86,7 +83,7 @@ def evaluate_by_confusion_matrix(cnfs_file, preds,
                 else:
                     xyz += 1
 
-    log.debug("TP = {} TN = {} FP = {} FN = {} xyz = {}" \
+    log.info("TP = {} TN = {} FP = {} FN = {} xyz = {}" \
         .format(tp, tn, fp, fn, xyz))
 
     return (tp, tn, fp, fn, xyz)
