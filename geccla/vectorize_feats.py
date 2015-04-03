@@ -9,7 +9,7 @@ from classification import FORMATS
 def main():
     args = parse_user_arguments()
 
-    vectorizer = FeatureVectorizer(args.confusion_set)
+    vectorizer = FeatureVectorizer(args.confusion_set, args.feature_vector)
     vectorizer.vectorize_features(args.cnfs_file, args.data_file, args.format,
                                   args.feature_set)
   

@@ -1,5 +1,6 @@
 import os
 import sys
+import math
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -156,9 +157,9 @@ def normalize_predictions(preds):
 
 def __sigmoid(x):
     if x >= 0:
-        return 1 / (1 + exp(-x))
+        return 1 / (1 + math.exp(-x))
     else:
         # if x is less than zero then z will be small, denom can't be
         # zero because it's 1+z.
-        z = exp(x)
+        z = math.exp(x)
         return z / (1 + z)

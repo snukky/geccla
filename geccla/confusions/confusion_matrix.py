@@ -49,7 +49,7 @@ class ConfusionMatrix():
         return self.num_of_confs() - self.num_of_AA_confs()
     
     def error_rate(self):
-        return self.num_of_AB_confs() / float(self.num_of_confs() * 100)
+        return self.num_of_AB_confs() / float(self.num_of_confs()) * 100
 
     def __build_matrix(self, cnfs_file):
         output = cmd.run("cat {0} | tr -s '|||' '\t' | cut -f3,4 | "

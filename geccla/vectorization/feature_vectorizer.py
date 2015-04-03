@@ -26,14 +26,14 @@ class FeatureVectorizer():
         self.min_feat_count = min_feat_count
         self.max_vec_size = max_vec_size
 
+        # dict object of features with feature values as keys and
+        # feature_indexes as values
+        self.feat_map = {}
+        # set object with all features
+        self.feat_vec = set()
+
         if feat_file:
             self.__read_feature_vector(feat_file)
-        else:
-            # dict object of features with feature values as keys and
-            # feature_indexes as values
-            self.feat_map = {}
-            # set object with all features
-            self.feat_vec = set()
 
     def vectorize_features(self, cnfs_file, data_file, format, feat_set=None):
         if not self.feat_vec or not self.feat_map:

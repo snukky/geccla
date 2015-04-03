@@ -18,10 +18,10 @@ def ln(file, link):
     run("ln -s {} {}".format(os.path.abspath(file), os.path.abspath(link)))
 
 def wdiff(file1, file2, output_file=None):
-    if os.path.exists(file1):
+    if not os.path.exists(file1):
         log.error("file {} does not exists".format(file1))
         return None
-    if os.path.exists(file2):
+    if not os.path.exists(file2):
         log.error("file {} does not exists".format(file2))
         return None
 

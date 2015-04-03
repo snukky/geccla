@@ -7,7 +7,7 @@ def compose_feature_set(feature_sets, base_feature, set_name):
 
 def sum_feature_sets(feature_sets, names):
     if type(names) == type(''):
-        names = names.split(' ')
+        names = names.split()
     result = []
     for name in names:
         result += feature_sets[name]
@@ -43,7 +43,7 @@ FEATURE_SETS = {
         'wAw2Aw3w4A'.split(', '),
 
     # A.Roz. features - POS
-    'POS':
+    'POSngrams':
         'pB, p2B, p3B, pA, p2A, p3A, pBpA, p2BpB, pAp2A, pBwB, pAwA, p2Bw2B, '
         'p2Aw2A, p2BpBpA, pBpAp2A, pAp2Ap3A'.split(', '),
 
@@ -80,7 +80,9 @@ FEATURE_SETS['Verb']          = compose_feature_set(FEATURE_SETS, 'verb', 'NP1')
 FEATURE_SETS['Verb'].add('verb')
 
 FEATURE_SETS['word']     = sum_feature_sets(FEATURE_SETS, 'wordngrams')
-FEATURE_SETS['pos']      = sum_feature_sets(FEATURE_SETS, 'wordngrams POS')
-FEATURE_SETS['roz']      = sum_feature_sets(FEATURE_SETS, 'wordngrams POS NP1 NP2 wordsAfterNP wordsBeforeNP Verb Preposition')
+FEATURE_SETS['pos']      = sum_feature_sets(FEATURE_SETS, 'wordngrams POSngrams')
+FEATURE_SETS['roz']      = sum_feature_sets(FEATURE_SETS, 'wordngrams POSngrams NP1 NP2 wordsAfterNP wordsBeforeNP Verb Preposition')
 FEATURE_SETS['rozextra'] = sum_feature_sets(FEATURE_SETS, 'roz extra')
 FEATURE_SETS['rozsrc']   = sum_feature_sets(FEATURE_SETS, 'roz src')
+
+FEATURE_SETS['all'] = sum_feature_sets(FEATURE_SETS, 'tok pos awc')
