@@ -48,11 +48,14 @@ def grid_search_generator(min_max_params=(0.0, 1.0, 0.0, 1.0),
 
     param_sets = calculate_param_sets(min_max_params, num_of_steps)
     results = {}
+    response = None
 
-    for thr, dif in param_sets:
-        log.debug("threshold and difference: ({},{})".format(thr, dif))
+    for n, (thr, dif) in enumerate(param_sets):
+        log.debug("param set {:0>3d}: ({}, {})".format(n+1, thr, dif))
 
         response = yield (thr, dif)
+        yield
+        log.debug("evaluation response: {}".format(response))
 
         if response is not None:
             prec, rec, fscore = response
@@ -100,8 +103,8 @@ def calculate_param_sets(min_max_params=(0.0, 1.0, 0.0, 1.0), num_of_steps=10):
     log.info("min/max threshold: {}/{}".format(min_thr, max_thr))
     log.info("min/max difference: {}/{}".format(min_dif, max_dif))
 
-    thr_step = (max_thr - min_thr) / float(num_of_steps)
-    dif_step = (max_dif - min_dif) / float(num_of_steps)
+    thr_step = (max_thr - min_thr) / float(num_of_steps - 1)
+    dif_step = (max_dif - min_dif) / float(num_of_steps - 1)
 
     log.info("threshold step: {}".format(thr_step))
     log.info("difference step: {}".format(dif_step))

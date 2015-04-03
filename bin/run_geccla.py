@@ -103,9 +103,9 @@ def main():
             if args.conll_grid_search:
                 new_evl_opts = run_conll_grid_search(run_file, args.conll_eval[i])
 
-                cmd.ln(filepath + '.in', filepath + '.m2best.in')
-                cmd.ln(filepath + '.cnfs', filepath + '.m2best.cnfs')
-                cmd.ln(filepath + '.pred', filepath + '.m2best.pred')
+                cmd.ln(run_file + '.in', run_file + '.m2best.in')
+                cmd.ln(run_file + '.cnfs', run_file + '.m2best.cnfs')
+                cmd.ln(run_file + '.pred', run_file + '.m2best.pred')
                 
                 if args.eval:
                     evaluate_predictions(new_evl_opts, run_file + '.m2best')
@@ -119,6 +119,8 @@ def main():
             log.info("\n" + cmd.run("cat {0}.eval".format(run_file)))
         if args.grid_search:
             log.info("\n" + cmd.run("cat {0}.best.eval".format(run_file)))
+        if args.conll_grid_search:
+            log.info("\n" + run_cmd("cat {0}.m2best.eval".format(run_file)))
 
 
 def train_nulls(filepath):
@@ -257,7 +259,7 @@ def run_grid_search(filepath):
         .format(root=config.ROOT_DIR, cs=CONFUSION_SET, frm=FORMAT, fp=filepath))
 
     thr, dif = output.split("\t")[:2]
-    log.debug("grid search found threshold options: t={} d={}".format(thr, dif))
+    log.debug("grid search found tunning options: t={} d={}".format(thr, dif))
 
     return " -t {} -d {}".format(thr, dif)
 
@@ -268,7 +270,7 @@ def evaluate_on_conll_data(filepath, year):
 
     for name, m2_file in config.CONLL.TEST_SETS[year].iteritems():
         orig_tok = config.CONLL.ORIGINAL_TOKS[year]
-        cmd.run("{root}/eval_m2.py -o {orig} -t {fp}.out.retok {fp}.out {m2} >> {fp}.eval.m2" \
+        cmd.run("{root}/eval_m2.py -o {orig} -t {fp}.out.retok {fp}.out {m2} >> {fp}.eval" \
             .format(root=config.ROOT_DIR, orig=orig_tok, m2=m2_file, fp=filepath))
     
     cmd.wdiff(filepath + '.out', filepath + '.out.retok')
@@ -277,7 +279,7 @@ def evaluate_on_conll_data(filepath, year):
     cmd.ln(filepath + '.out.retok', filepath + '.out.conll')
     cmd.wdiff(orig_tok, filepath + '.out.conll')
 
-def run_conll_grid_search():
+def run_conll_grid_search(filepath, year):
     log.debug("running CoNLL grid searching on {0}.pred and {0}.cnfs".format(filepath))
 
     assert_file_exists(filepath + '.in')
@@ -293,7 +295,7 @@ def run_conll_grid_search():
                 m2=m2_file, orig=orig_tok, fp=filepath))
 
     thr, dif = output.split("\t")[:2]
-    log.debug("CoNLL grid search found threshold options: t={} d={}".format(thr, dif))
+    log.debug("CoNLL grid search found tunning options: t={} d={}".format(thr, dif))
 
     return " -t {} -d {}".format(thr, dif)
 
@@ -345,8 +347,8 @@ def parse_user_arguments():
     eval.add_argument("--conll-eval", type=str, nargs="*", 
         choices=config.CONLL.TEST_SETS.keys(), 
         help="evaluate on predefined CoNLL Shared Task test set")
-    #eval.add_argument("--conll-grid-search", action='store_true', 
-        #help="estimates evaluation threshold values using grid search")
+    eval.add_argument("--conll-grid-search", action='store_true', 
+        help="estimates evaluation threshold values using grid search")
 
     opts = parser.add_argument_group("external scripts' arguments")
     opts.add_argument("--cnf-opts", type=str, default='',
@@ -379,9 +381,9 @@ def parse_user_arguments():
             " for each --run file")
     if args.grid_search and not args.eval:
         raise ArgumentError("argument --grid-search requires --eval")
-    #if args.conll_grid_search and not args.conll_eval:
-        #raise ArgumentError("argument --conll-grid-search requires"
-            #" --conll-eval")
+    if args.conll_grid_search and not args.conll_eval:
+        raise ArgumentError("argument --conll-grid-search requires"
+            " --conll-eval")
 
     #if args.algorithm not in ALGORITHMS:
         #raise ArgumentError("argument --algorithm with value {}" \
@@ -405,8 +407,7 @@ def load_setting_file(args):
             if opt == 'use' and not args.algorithm:
                 log.debug("setting algorithm: {}".format(val))
                 args.algorithm = val
-
-            if opt == 'set' and not args.confusion_set:
+            elif opt == 'set' and not args.confusion_set:
                 log.debug("confusion set: {}".format(val))
                 args.confusion_set = val
 

@@ -8,7 +8,10 @@ if os.path.dirname(__file__) not in sys.path:
 from preprocess.letter_case import restore_file_case
 from prediction.output_formatter import inject_predictions
 from prediction import parse_pred_file
+
 from evaluation.m2scorer_fork import m2scorer
+from evaluation.grid_search import grid_search_generator
+from evaluation.grid_search import find_minmax_params
 
 import cmd
 from logger import log

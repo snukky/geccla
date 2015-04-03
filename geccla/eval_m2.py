@@ -11,7 +11,12 @@ def main():
     prec, rec, fscore = evaluate_m2(args.text_file, args.m2_file, 
                                     args.orig_file, args.temp_file)
 
-    print "{0:.4f}\t{1:.4f}\t{2:.4f}".format(prec, rec, fscore)
+    print "### M^2 evaluation of {} by {}".format(args.text_file, args.m2_file)
+    print ""
+    print "Precision   : %.4f" % prec
+    print "Recall      : %.4f" % rec
+    print "F0.5        : %.4f" % fscore
+    print ""
     
 
 def parse_user_arguments():
