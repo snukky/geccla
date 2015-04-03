@@ -68,7 +68,7 @@ def evaluate_by_confusion_matrix(cnfs_file, preds,
     log.debug("confusion matrix scores: {}".format(cnfs_file))
 
     tp, fp, tn, fn, xyz = 0, 0, 0, 0, 0
-    results = iterate_confs_and_preds(cnfs_file, preds, thr, dif)
+    results = iterate_confs_and_preds(cnfs_file, preds, thr, dif, lowercase=True)
 
     for err, cor, pred in results:
         # figure 4. WAS evaluation scheme

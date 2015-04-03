@@ -32,18 +32,23 @@ class OutputFormatter():
         self.confusion_set = ConfusionSet(conf_set)
         self.restore_case = restore_case
 
-    def text_output(self, text_file, cnfs_file, pred_file, format, 
-                          threshold, difference, 
-                          restore_tok=True):
+    def text_output(self, text_file, cnfs_file, pred_file, 
+                          format, 
+                          threshold, difference,
+                          debug=False):
         
         preds = parse_pred_file(pred_file, format, self.confusion_set)
 
         for n, text, data in iterate_text_confs_and_preds(text_file, cnfs_file, preds):
-            log.debug("{n}: {txt}".format(n=n, txt=text))
+            if debug:
+                log.debug("{n}: {txt}".format(n=n, txt=text))
 
-            yield self.__format_sentence(text, data, threshold, difference, n=n)
+            yield self.__format_sentence(text, data, threshold, difference, 
+                                         n=n, debug=debug)
 
-    def __format_sentence(self, sent, data, thr=None, dif=None, n=None):
+    def __format_sentence(self, sent, data, 
+                                thr=None, dif=None, 
+                                n=None, debug=False):
         tokens = sent.split()
 
         for i, j, err, _, answers in data:
@@ -58,7 +63,8 @@ class OutputFormatter():
                     real_err, '_'.join(debug_toks)))
 
             if err.lower() != pred.lower():
-                log.debug("  ({},{}) {} -> {}".format(i, j, err, pred))
+                if debug:
+                    log.debug("  ({},{}) {} -> {}".format(i, j, err, pred))
 
                 if pred == '<null>':
                     pred = ''
@@ -70,5 +76,5 @@ class OutputFormatter():
         new_sent = re.sub(r'\s\s+' , ' ', ' '.join(tokens))
 
         if self.restore_case:
-            return restore_sentence_case(new_sent, sent)
+            return restore_sentence_case(new_sent, sent, debug=False)
         return new_sent

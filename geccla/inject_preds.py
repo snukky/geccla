@@ -14,7 +14,8 @@ def main():
     frm = OutputFormatter(args.confusion_set)
     for line in frm.text_output(args.text_file, args.cnfs_file, args.pred_file, 
                                 args.format,
-                                args.threshold, args.difference):
+                                args.threshold, args.difference,
+                                debug=False):
         print line
 
 
@@ -25,7 +26,6 @@ def parse_user_arguments():
     parser.add_argument('text_file', help="input text file")
     parser.add_argument('cnfs_file', help=".cnfs file")
     parser.add_argument('pred_file', help="classifier predictions")
-
 
     req = parser.add_argument_group("required arguments")
     req.add_argument('-c', '--confusion-set', required=True, type=str, 

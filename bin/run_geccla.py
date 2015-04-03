@@ -66,7 +66,7 @@ def main():
             
             cmd.ln(file, run_file + '.txt')
 
-            find_confusions(args.cnf_opts, run_file, parallel=False)
+            find_confusions(args.cnf_opts, run_file, parallel=args.eval)
             extract_features(run_file, args.ext_opts)
             vectorize_features(args.vec_opts, run_file)
             run_classifier(args.model, args.cls_opts, run_file)

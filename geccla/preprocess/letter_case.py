@@ -11,14 +11,14 @@ sys.path.insert(0, os.path.dirname(__file__))
 from logger import log
 
 
-def restore_file_case(text_file, orig_file): 
+def restore_file_case(text_file, orig_file, debug=False):
     text_io = codecs.open(text_file, 'r', encoding='utf8')
     orig_io = codecs.open(orig_file, 'r', encoding='utf8')
 
     for line in text_io:
         orig_line = orig_io.next()
 
-        result = restore_sentence_case(line.strip(), orig_line.strip())
+        result = restore_sentence_case(line.strip(), orig_line.strip(), debug)
 
         assert result.lower() == line.strip().lower(), \
             "Case restoration changed a sentence!\n{}\n{}" \
@@ -29,8 +29,8 @@ def restore_file_case(text_file, orig_file):
     text_io.close()
     orig_io.close()
 
-def restore_sentence_case(sent, orig_sent):
-    if sent != orig_sent:
+def restore_sentence_case(sent, orig_sent, debug=False):
+    if debug and sent != orig_sent:
         log.debug(u'toks: {}'.format(sent).encode('utf8', 'replace'))
         log.debug(u'orig: {}'.format(orig_sent).encode('utf8', 'replace'))
 
@@ -44,7 +44,7 @@ def restore_sentence_case(sent, orig_sent):
     new_toks = []
      
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
-        if tag != 'equal' and sent != orig_sent:
+        if debug and tag != 'equal' and sent != orig_sent:
             log.debug(u"  {}: ({},{}) '{}' -> ({},{}) '{}'" \
                 .format(tag, 
                         i1, i2, ' '.join(toks[i1:i2]), 
@@ -80,7 +80,7 @@ def restore_sentence_case(sent, orig_sent):
 
     new_sent = ' '.join(new_toks)
     
-    if sent != orig_sent:
+    if debug and sent != orig_sent:
         log.debug("sent: {}".format(new_sent))
 
     return new_sent

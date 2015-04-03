@@ -1,17 +1,43 @@
+import os
+import sys
 
-def compose_feature_set(feature_sets, base_feature, set_name):
-    result = []
-    for feature in feature_sets[set_name]:
-        result.append(base_feature + '&' + feature)
-    return set(result)
+sys.path.insert(0, os.path.dirname(__file__))
 
-def sum_feature_sets(feature_sets, names):
-    if type(names) == type(''):
-        names = names.split()
+from logger import log
+
+
+def compose_feature_set(name, base_feature, set_name, extra=[]):
+    global FEATURE_SETS
+
+    if set_name not in FEATURE_SETS:
+        log.error("feature set '{}' does not exist!".format(set_name))
+        return None
+    if name in FEATURE_SETS and FEATURE_SETS[name] is not None:
+        log.warn("feature set '{}' exist and is not empty!".format(name))
+        return None
+
+    FEATURE_SETS[name] = list(set([base_feature + '&' + feat 
+                                   for feat in FEATURE_SETS[set_name]] + extra))
+    return len(FEATURE_SETS[name])
+    
+def sum_feature_sets(name, set_names):
+    global FEATURE_SETS
+
+    if name in FEATURE_SETS and FEATURE_SETS[name] is not None:
+        log.warn("feature set '{}' exist and is not empty!".format(name))
+        return None
+    if type(set_names) == type(''):
+        set_names = set_names.split()
+
     result = []
-    for name in names:
-        result += feature_sets[name]
-    return set(result)
+    for set_name in set_names:
+        if set_name not in FEATURE_SETS:
+            log.error("feature set '{}' does not exist!".format(set_name))
+        else:
+            result += FEATURE_SETS[set_name]
+    FEATURE_SETS[name] = list(set(result))
+
+    return len(FEATURE_SETS[name])
 
 
 FEATURE_SETS = {
@@ -43,7 +69,7 @@ FEATURE_SETS = {
         'wAw2Aw3w4A'.split(', '),
 
     # A.Roz. features - POS
-    'POSngrams':
+    'POS':
         'pB, p2B, p3B, pA, p2A, p3A, pBpA, p2BpB, pAp2A, pBwB, pAwA, p2Bw2B, '
         'p2Aw2A, p2BpBpA, pBpAp2A, pAp2Ap3A'.split(', '),
 
@@ -70,19 +96,18 @@ FEATURE_SETS = {
         'count headWordinSent headWordinPrevSent'.split(),
 }
 
-FEATURE_SETS['genall'] = sum_feature_sets(FEATURE_SETS, 'tok pos awc')
-FEATURE_SETS['genpos'] = sum_feature_sets(FEATURE_SETS, 'tok pos')
-FEATURE_SETS['gentok'] = sum_feature_sets(FEATURE_SETS, 'tok awc')
+sum_feature_sets('genall', 'tok pos awc')
+sum_feature_sets('genpos', 'tok pos')
+sum_feature_sets('gentok', 'tok awc')
 
-FEATURE_SETS['wordsBeforeNP'] = compose_feature_set(FEATURE_SETS, 'wB', 'NP1')
-FEATURE_SETS['Preposition']   = compose_feature_set(FEATURE_SETS, 'prep', 'NP1')
-FEATURE_SETS['Verb']          = compose_feature_set(FEATURE_SETS, 'verb', 'NP1')
-FEATURE_SETS['Verb'].add('verb')
+sum_feature_sets('all', 'tok pos awc')
 
-FEATURE_SETS['word']     = sum_feature_sets(FEATURE_SETS, 'wordngrams')
-FEATURE_SETS['pos']      = sum_feature_sets(FEATURE_SETS, 'wordngrams POSngrams')
-FEATURE_SETS['roz']      = sum_feature_sets(FEATURE_SETS, 'wordngrams POSngrams NP1 NP2 wordsAfterNP wordsBeforeNP Verb Preposition')
-FEATURE_SETS['rozextra'] = sum_feature_sets(FEATURE_SETS, 'roz extra')
-FEATURE_SETS['rozsrc']   = sum_feature_sets(FEATURE_SETS, 'roz src')
+compose_feature_set('wordsBeforeNP', 'wB', 'NP1')
+compose_feature_set('Preposition', 'prep', 'NP1')
+compose_feature_set('Verb', 'verb', 'NP1', extra=['verb'])
 
-FEATURE_SETS['all'] = sum_feature_sets(FEATURE_SETS, 'tok pos awc')
+sum_feature_sets('rozword', 'wordngrams')
+sum_feature_sets('rozpos', 'wordngrams POS')
+sum_feature_sets('roz', 'wordngrams POS NP1 NP2 wordsAfterNP wordsBeforeNP Verb Preposition')
+sum_feature_sets('rozextra', 'roz extra')
+sum_feature_sets('rozsrc', 'roz src')

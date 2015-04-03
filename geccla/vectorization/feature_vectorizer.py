@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 import os
 import sys
 
@@ -193,7 +191,9 @@ class FeatureVectorizer():
             .format(freq_file, self.min_feat_count)).strip()
     
         log.info("building feature vector...")
+
         log.info("selected feature set: {}".format(feat_set))
+        log.info("feature predicates: {}".format(', '.join(FEATURE_SETS[feat_set])))
         log.info("total number of predicates: {}".format(len(FEATURE_SETS[feat_set])))
     
         regex = '^(' + '|'.join(FEATURE_SETS[feat_set]) + ')='
@@ -203,6 +203,8 @@ class FeatureVectorizer():
         log.info("limit for features: {}".format(self.max_vec_size))
         log.info("active features: {}".format(cmd.wc(feat_file)))
     
-        feat_count = cmd.run("cat {} | sed -r 's/(.*)=.*/\\1/' | sort -u | wc -l" \
-            .format(feat_file)).strip()
-        log.info("active predicates: {}".format(feat_count))
+        feat_preds = cmd.run("cat {} | sed -r 's/(.*)=.*/\\1/' | sort -u" \
+            .format(feat_file)).strip().split("\n")
+
+        log.info("active feature predicates: {}".format(', '.join(feat_preds)))
+        log.info("total number of active predicates: {}".format(len(feat_preds)))

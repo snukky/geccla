@@ -39,14 +39,17 @@ def iterate_text_confs_and_preds(text_file, cnfs_file, preds):
     cnfs_io.close()
     
 
-def iterate_confs_and_preds(cnfs_file, preds, threshold=None, difference=None):
+def iterate_confs_and_preds(cnfs_file, preds, thr=None, dif=None, lowercase=False):
 
     with open(cnfs_file) as cnfs_io:
         for i, line in enumerate(cnfs_io):
             _, _, _, err, cor, _ = parse_conf_line(line)
-            pred = get_best_prediction(err, preds[i], threshold, difference)
+            pred = get_best_prediction(err, preds[i], thr, dif)
 
-            yield (err, cor, pred)
+            if lowercase:
+                yield (err.lower(), cor.lower(), pred.lower())
+            else:
+                yield (err, cor, pred)
 
 def get_best_prediction(err, answers, threshold=None, difference=None):
     pred, confidence = find_best_answer(answers)
