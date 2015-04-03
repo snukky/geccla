@@ -16,7 +16,7 @@ from logger import log
 
 
 CONFUSION_SET = None
-ALGORITHMS = None
+ALGORITHM = None
 FORMAT = None
 
 
@@ -45,12 +45,14 @@ def main():
                 log.info("...and frequencies: {}.cnfs.freq".format(train_file))
                 cmd.ln(args.train + '.freq', train_file + '.cnfs.freq')
         else:
-            train_nulls(args.train, train_file)
-            find_confusions(args.train, args.cnf_opts, train_file, parallel=True)
+            cmd.ln(args.train, train_file + '.txt')
+
+            train_nulls(train_file)
+            find_confusions(args.cnf_opts, train_file, parallel=True)
             extract_features(train_file, args.ext_opts)
         
         print_confusion_statistics(train_file)
-        vectorize_confusions(args.vec_opts, train_file)
+        vectorize_features(args.vec_opts, train_file)
         train_classifier(args.model, args.cls_opts, train_file)
 
         args.cnf_opts += " -n {}.ngrams".format(train_file)
@@ -62,7 +64,9 @@ def main():
             log.info("RUNNING ON FILE: {}".format(file))
             run_file = cmd.filebase_path(args.work_dir, file)
             
-            find_confusions(file, run_file, args.cnf_opts, parallel=False)
+            cmd.ln(file, run_file + '.txt')
+
+            find_confusions(args.cnf_opts, run_file, parallel=False)
             extract_features(run_file, args.ext_opts)
             vectorize_features(args.vec_opts, run_file)
             run_classifier(args.model, args.cls_opts, run_file)
@@ -112,16 +116,32 @@ def main():
     for i, file in enumerate(args.run):
         run_file = cmd.filebase_path(args.work_dir, file)
         if args.eval:
-            log.info("\n" + run_cmd("cat {0}.eval".format(run_file)))
+            log.info("\n" + cmd.run("cat {0}.eval".format(run_file)))
         if args.grid_search:
-            log.info("\n" + run_cmd("cat {0}.best.eval".format(run_file)))
+            log.info("\n" + cmd.run("cat {0}.best.eval".format(run_file)))
 
 
-def train_nulls(input_file, filepath):
-    pass
+def train_nulls(filepath):
+    log.debug("training <null> positions from file: {}.txt".format(filepath))
 
-def find_confusions(input_file, options, filepath, parallel=False):
-    log.debug("finding confusion examples from file: {}".format(input_file))
+    if result_is_ready('{}.ngrams.tok'.format(filepath)) \
+            and result_is_ready('{}.ngrams.pos'.format(filepath)) \
+            and result_is_ready('{}.ngrams.awc'.format(filepath)):
+        return 
+
+    assert_file_exists(filepath + '.txt')
+
+    cmd.run("{root}/train_nulls.py -c {cs} -l tok,pos,awc -n {fp}.ngrams {fp}.txt" \
+        .format(root=config.ROOT_DIR, cs=CONFUSION_SET, fp=filepath))
+
+def find_confusions(options, filepath, parallel=False):
+    log.debug("finding confusion examples from file: {}.txt".format(filepath))
+
+    if result_is_ready('{}.cnfs.empty'.format(filepath)):
+        return
+
+    assert_file_exists(filepath + '.txt')
+    input_file = filepath + '.txt'
 
     err_file = filepath + '.in'
     input_is_parallel = cmd.is_parallel_file(input_file)
@@ -141,7 +161,7 @@ def find_confusions(input_file, options, filepath, parallel=False):
     if not options:
         options = " -n {}.ngrams".format(filepath) 
 
-    cmd.run("{root}/find_confs.py -c {cs} {opts} {err_file} > {fp}.cnfs.empty" \
+    cmd.run("{root}/find_confs.py -c {cs} -l tok,pos,awc {opts} {err_file} > {fp}.cnfs.empty" \
         .format(root=config.ROOT_DIR, cs=CONFUSION_SET, 
                 opts=options, err_file=err_file, fp=filepath))
 
@@ -151,18 +171,24 @@ def find_confusions(input_file, options, filepath, parallel=False):
 def extract_features(filepath, options=''):
     log.debug("extracting features for file {}.cnfs.empty".format(filepath))
 
+    if result_is_ready('{}.cnfs'.format(filepath)):
+        return
+
     assert_file_exists(filepath + '.cnfs.empty')
 
-    cmd.run("{root}/extract_feats.py {opts} {fp}.in {fp}.cnfs" \
+    cmd.run("{root}/extract_feats.py {opts} {fp}.in {fp}.cnfs.empty > {fp}.cnfs" \
         .format(root=config.ROOT_DIR, opts=options, fp=filepath))
 
 def print_confusion_statistics(filepath):
-    stats = cmd.run("{root}/manage_confs.py {fp}.cnfs" \
-        .format(root=ROOT_DIR, fp=filepath))
+    stats = cmd.run("{root}/manage_confs.py -c {cs} {fp}.cnfs" \
+        .format(root=config.ROOT_DIR, cs=CONFUSION_SET, fp=filepath))
     log.info("training data statistics:\n{}".format(stats))
 
-def vectorize_confusions(options, filepath):
+def vectorize_features(options, filepath):
     log.debug("vectorizing features from file {}.cnfs".format(filepath))
+
+    if result_is_ready('{}.data'.format(filepath)):
+        return
 
     assert_file_exists(filepath + '.cnfs')
 
@@ -171,7 +197,10 @@ def vectorize_confusions(options, filepath):
                 opts=options, fp=filepath))
 
 def train_classifier(model, options, filepath):
-    log.debug("training {} model on file {}.data".format(ALGORITHM, filepath))
+    log.debug("training {} model from file {}.data".format(ALGORITHM, filepath))
+
+    if result_is_ready(model):
+        return
 
     assert_file_exists(filepath + '.data')
 
@@ -180,7 +209,10 @@ def train_classifier(model, options, filepath):
                 opts=options, model=model, fp=filepath))
 
 def run_classifier(model, options, filepath):
-    log.debug("training {} model on file {}.data".format(algorithm, filepath))
+    log.debug("running {} model from file {}.data".format(ALGORITHM, filepath))
+
+    if result_is_ready('{}.pred'.format(filepath)):
+        return
 
     assert_file_exists(model)
     assert_file_exists(filepath + '.data')
@@ -192,12 +224,16 @@ def run_classifier(model, options, filepath):
 def inject_predictions(options, filepath):
     log.debug("injecting predictions {0}.pred into {0}.in".format(filepath))
 
+    if result_is_ready('{}.out'.format(filepath)):
+        return
+
     assert_file_exists(filepath + '.in')
     assert_file_exists(filepath + '.cnfs')
     assert_file_exists(filepath + '.pred')
 
-    cmd.run("{root}/inject_preds.py -f {frm} {opts} {fp}.in {fp}.cnfs {fp}.pred > {fp}.out" \
-        .format(root=config.ROOT_DIR, frm=FORMAT, opts=options, fp=filepath))
+    cmd.run("{root}/inject_preds.py -c {cs} -f {frm} {opts} {fp}.in {fp}.cnfs {fp}.pred > {fp}.out" \
+        .format(root=config.ROOT_DIR, cs=CONFUSION_SET, frm=FORMAT, 
+                opts=options, fp=filepath))
     
     cmd.wdiff(filepath + '.in', filepath + '.out')
 
@@ -262,6 +298,15 @@ def run_conll_grid_search():
     log.debug("CoNLL grid search found threshold options: t={} d={}".format(thr, dif))
 
     return " -t {} -d {}".format(thr, dif)
+
+def result_is_ready(file):
+    if os.path.exists(file):
+        if os.stat(file).st_size == 0:
+            log.error("result file {} exists but is empty!".format(file))
+            exit()
+        log.debug("step is skipped as result file {} is ready".format(file))
+        return True
+    return False
 
 
 def assert_file_exists(file):
@@ -340,9 +385,9 @@ def parse_user_arguments():
         #raise ArgumentError("argument --conll-grid-search requires"
             #" --conll-eval")
 
-    if args.algorithm not in ALGORITHMS:
-        raise ArgumentError("argument --algorithm with value {}" \
-            " probably requires --default".format(args.algorithm))
+    #if args.algorithm not in ALGORITHMS:
+        #raise ArgumentError("argument --algorithm with value {}" \
+            #" probably requires --default".format(args.algorithm))
 
     log.debug(args)
     return args
