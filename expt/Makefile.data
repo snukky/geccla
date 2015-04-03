@@ -1,3 +1,4 @@
+GECCLA_DIR = /home/romang/scripts/geccla
 
 CONLL_NUCLE_M2 = /home/romang/data/nucle/nucle.m2
 
@@ -20,7 +21,7 @@ test2014.err: test2014.txt
 	cut -f1 $? > $@
 
 test2014.txt:
-	cat $(CONLL_TEST2014_M2) | ../scripts/make_parallel.perl > $@
+	cat $(CONLL_TEST2014_M2) | $(GECCLA_DIR)/scripts/make_parallel.perl > $@
 
 clean-test2014:
 	rm -f test2014.txt test2014.err test2014.cor
@@ -32,7 +33,7 @@ test2013.err: test2013.txt
 	cut -f1 $? > $@
 
 test2013.txt:
-	cat $(CONLL_TEST2013_M2) | ../scripts/make_parallel.perl > $@
+	cat $(CONLL_TEST2013_M2) | $(GECCLA_DIR)/scripts/make_parallel.perl > $@
 
 clean-test2013:
 	rm -f test2013.txt test2013.err test2013.cor
@@ -44,7 +45,7 @@ nucle.err: nucle.txt
 	cut -f1 $? > $@
 
 nucle.txt:
-	cat $(CONLL_NUCLE_M2) | ../scripts/make_parallel.perl > $@
+	cat $(CONLL_NUCLE_M2) | $(GECCLA_DIR)/scripts/make_parallel.perl > $@
 
 clean-nucle:
 	rm -f nucle.txt nucle.err nucle.cor
