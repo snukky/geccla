@@ -37,6 +37,9 @@ class OutputFormatter():
                           threshold, difference,
                           debug=False):
         
+        log.info("injecting predictions from file {} with params t={} d={}" \
+            .format(pred_file, threshold, difference))
+
         preds = parse_pred_file(pred_file, format, self.confusion_set)
 
         for n, text, data in iterate_text_confs_and_preds(text_file, cnfs_file, preds):

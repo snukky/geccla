@@ -31,7 +31,7 @@ def parse_user_arguments():
         help="prediction data format")
 
     eval = parser.add_argument_group("evaluation arguments")
-    eval.add_argument('-s', '--steps', type=int, default=10,
+    eval.add_argument('-s', '--steps', type=int, default=5,
         help="number of steps for threshold and difference")
 
     parser.add_argument('-g', '--grid-file', type=str,

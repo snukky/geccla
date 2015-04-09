@@ -184,7 +184,7 @@ class NullFinder(BasicFinder):
         return {level:file.name for level, file in files.iteritems()}
 
     def __count_frequencies(self, list_file, freq_file):
-        log.debug("counting n-gram frequencies in file {}...".format(list_file))
+        log.info("counting n-gram frequencies in file {}...".format(list_file))
         cmd.run("cat {0} | sort | uniq -c | sort -nr > {1}" \
             .format(list_file, freq_file))
 

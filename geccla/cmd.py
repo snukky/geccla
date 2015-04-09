@@ -1,4 +1,5 @@
 import os
+import shutil
 
 from logger import log
 
@@ -32,11 +33,18 @@ def wdiff(file1, file2, output_file=None):
 
     return output_file
 
+def cut(file, col_file=None, col=1):
+    if not col_file:
+        col_file ='{}.col{}'.format(file, col)
+    run("cut -f{} {} > {}".format(col, file, col_file))
+    return col_file
 
-def source_side_of_file(file):
+
+def source_side_of_file(file, src_file=None):
     if is_parallel_file(file):
-        run("cut -f1 {0} > {0}.err".format(file))
-        return file + '.err'
+        if not src_file:
+            src_file = file + '.src'
+        return cut(file, src_file)
     return file
 
 def is_parallel_file(file):
@@ -45,5 +53,8 @@ def is_parallel_file(file):
             return True
     return False
 
-def filebase_path(dir, filepath):
-    return os.path.join(dir, os.path.splitext(filepath)[0])
+def base_filepath(dir, file):
+    filename = os.path.split(file)[1]
+    filepath = os.path.join(dir, os.path.splitext(filename)[0])
+    log.debug("dir {} and file {} gives filepath: {}".format(dir, file, filepath))
+    return filepath

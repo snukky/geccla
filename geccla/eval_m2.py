@@ -8,8 +8,7 @@ from evaluation.maxmatch import evaluate_m2
 
 def main():
     args = parse_user_arguments()
-    prec, rec, fscore = evaluate_m2(args.text_file, args.m2_file, 
-                                    args.orig_file, args.temp_file)
+    prec, rec, fscore = evaluate_m2(args.text_file, args.m2_file)
 
     print "### M^2 evaluation of {} by {}".format(args.text_file, args.m2_file)
     print ""
@@ -25,10 +24,10 @@ def parse_user_arguments():
     parser.add_argument('text_file', help="input text file")
     parser.add_argument('m2_file', help="evaluation file in M2 format")
 
-    parser.add_argument('-o', '--orig-file', type=str,
-        help="file with original tokenization and letter casing")
-    parser.add_argument('-t', '--temp-file', type=str,
-        help="name for temporary files")
+    #parser.add_argument('-o', '--orig-file', type=str,
+        #help="source side of M^2 file with original tokenization and casing")
+    #parser.add_argument('-t', '--temp-file', type=str,
+        #help="name for temporary files")
 
     return parser.parse_args()
 

@@ -13,7 +13,7 @@ def main():
     result = run_m2_grid_search(
                  args.confusion_set, args.format, 
                  args.input_file, args.cnfs_file, args.pred_file, 
-                 args.m2_file, args.orig_file, 
+                 args.m2_file,
                  args.grid_file, args.work_dir,
                  args.steps)
     print "\t".join(map(str, result))
@@ -36,8 +36,8 @@ def parse_user_arguments():
     conll = parser.add_argument_group("M2 arguments")
     conll.add_argument('-m2', '--m2-file', type=str,
         help="gold standard file in M2 format")
-    conll.add_argument('-o', '--orig-file', type=str,
-        help="file with original tokenization and letter casing")
+    #conll.add_argument('-o', '--orig-file', type=str,
+        #help="source side of M^2 file with original tokenization and casing")
 
     eval = parser.add_argument_group("evaluation arguments")
     eval.add_argument('-s', '--steps', type=int, default=10,
