@@ -35,96 +35,100 @@ def main():
 
     if args.train:
         log.info("TRAINING ON FILE: {}".format(args.train))
-        train_file = cmd.filebase_path(args.work_dir, args.train)
+        train_file = cmd.base_filepath(args.work_dir, args.train)
         
-        if args.cnfs:
-            log.info("using confusion file: {}.cnfs".format(train_file))
-            cmd.ln(args.train, train_file + '.cnfs')
+        cmd.ln(args.train, train_file + '.txt')
 
-            if os.path.exists(args.train + '.freq'):
-                log.info("...and frequencies: {}.cnfs.freq".format(train_file))
-                cmd.ln(args.train + '.freq', train_file + '.cnfs.freq')
-        else:
-            cmd.ln(args.train, train_file + '.txt')
-
+        if "-n " not in args.cnf_opts:
             train_nulls(train_file)
-            find_confusions(args.cnf_opts, train_file, parallel=True)
-            extract_features(train_file, args.ext_opts)
+            args.cnf_opts += " -n {}.ngrams".format(train_file)
+
+        find_confusions(args.cnf_opts, train_file, parallel=True)
+        extract_features(train_file, args.ext_opts)
         
         print_confusion_statistics(train_file)
         vectorize_features(args.vec_opts, train_file)
         train_classifier(args.model, args.cls_opts, train_file)
 
-        args.cnf_opts += " -n {}.ngrams".format(train_file)
         args.vec_opts += " -v {}.cnfs.feat".format(train_file)
         create_setting_file(args)
 
     if args.run:
-        for i, file in enumerate(args.run):
-            log.info("RUNNING ON FILE: {}".format(file))
-            run_file = cmd.filebase_path(args.work_dir, file)
-            
-            cmd.ln(file, run_file + '.txt')
+        log.info("RUNNING ON FILE: {}".format(args.run))
+        run_file = cmd.base_filepath(args.work_dir, args.run)
+        
+        if args.m2:
+            cmd.ln(args.run, run_file + '.m2')
+            make_m2_parallel(run_file)
+        else:
+            cmd.ln(args.run, run_file + '.txt')
 
-            find_confusions(args.cnf_opts, run_file, parallel=args.eval)
-            extract_features(run_file, args.ext_opts)
-            vectorize_features(args.vec_opts, run_file)
-            run_classifier(args.model, args.cls_opts, run_file)
+        find_confusions(args.cnf_opts, run_file, parallel=args.eval)
+        extract_features(run_file, args.ext_opts)
 
-            inject_predictions(args.evl_opts, run_file)
+        print_confusion_statistics(run_file)
+        vectorize_features(args.vec_opts, run_file)
+        run_classifier(args.model, args.cls_opts, run_file)
+
+        inject_predictions(args.evl_opts, run_file)
 
     if args.eval:
-        for i, file in enumerate(args.run):
-            log.info("EVALUATING FILE: {}".format(file))
-            run_file = cmd.filebase_path(args.work_dir, file)
+        log.info("EVALUATING FILE: {}".format(file))
 
-            evaluate_predictions(args.evl_opts, run_file)
+        evaluate_predictions(args.evl_opts, run_file)
+        if args.m2:
+            evaluate_m2(run_file)
 
-            if args.grid_search:
-                new_evl_opts = run_grid_search(run_file)
+    if args.tune:
+        log.info("TUNNING ON FILE: {}".format(args.tune))
+        tune_file = cmd.base_filepath(args.work_dir, args.tune)
 
-                cmd.ln(run_file + '.in', run_file + '.best.in')
-                cmd.ln(run_file + '.cnfs', run_file + '.best.cnfs')
-                cmd.ln(run_file + '.pred', run_file + '.best.pred')
+        if args.m2:
+            cmd.ln(args.tune, tune_file + '.m2')
+            make_m2_parallel(tune_file)
+        else:
+            cmd.ln(args.tune, tune_file + '.txt')
 
-                evaluate_predictions(new_evl_opts, run_file + '.best')
-                inject_predictions(new_evl_opts, run_file + '.best')
+        find_confusions(args.cnf_opts, tune_file, parallel=True)
+        extract_features(tune_file, args.ext_opts)
 
-    if args.conll_eval:
-        for i, file in enumerate(args.run):
-            log.info("CoNLL EVALUATION ON FILE: {}".format(file))
-            run_file = cmd.filebase_path(args.work_dir, file)
-        
-            evaluate_on_conll_data(run_file, args.conll_eval[i])
+        print_confusion_statistics(tune_file)
+        vectorize_features(args.vec_opts, tune_file)
+        run_classifier(args.model, args.cls_opts, tune_file)
 
-            if args.grid_search:
-                evaluate_on_conll_data(run_file + '.best', args.conll_eval[i])
+        inject_predictions('', tune_file)
+         
+        log.info("GRID SEARCHING ON FILE: {}".format(args.tune))
 
-            if args.conll_grid_search:
-                new_evl_opts = run_conll_grid_search(run_file, args.conll_eval[i])
+        if args.m2:
+            new_evl_opts = run_m2_grid_search(tune_file)
+        else:
+            new_evl_opts = run_grid_search(tune_file)
 
-                cmd.ln(run_file + '.in', run_file + '.m2best.in')
-                cmd.ln(run_file + '.cnfs', run_file + '.m2best.cnfs')
-                cmd.ln(run_file + '.pred', run_file + '.m2best.pred')
-                
-                if args.eval:
-                    evaluate_predictions(new_evl_opts, run_file + '.m2best')
+        args.evl_opts = new_evl_opts
+        create_setting_file(args)
+    
+    if args.tune and args.eval:
+        log.info("EVALUATING AFTER TUNNING ON FILE: {}".format(args.tune))
 
-                inject_predictions(new_evl_opts, run_file + '.m2best')
-                evaluate_on_conll_data(run_file + '.m2best', args.conll_eval[i])
+        cmd.ln(run_file + '.cnfs', run_file + '.best.cnfs')
+        cmd.ln(run_file + '.pred', run_file + '.best.pred')
+        evaluate_predictions(new_evl_opts, run_file + '.best')
 
-    for i, file in enumerate(args.run):
-        run_file = cmd.filebase_path(args.work_dir, file)
-        if args.eval:
-            log.info("\n" + cmd.run("cat {0}.eval".format(run_file)))
-        if args.grid_search:
-            log.info("\n" + cmd.run("cat {0}.best.eval".format(run_file)))
-        if args.conll_grid_search:
-            log.info("\n" + run_cmd("cat {0}.m2best.eval".format(run_file)))
+        if args.m2:
+            cmd.ln(run_file + '.m2', run_file + '.best.m2')
+            cmd.ln(run_file + '.in', run_file + '.best.in')
+            inject_predictions(new_evl_opts, run_file + '.best')
+            evaluate_m2(run_file + '.best')
+            
+    if args.eval:
+        log.info("\n" + cmd.run("cat {0}.eval".format(run_file)))
+    if tune_file:
+        log.info("\n" + cmd.run("cat {0}.best.eval".format(run_file)))
 
 
 def train_nulls(filepath):
-    log.debug("training <null> positions from file: {}.txt".format(filepath))
+    log.info("training <null> positions from file: {}.txt".format(filepath))
 
     if result_is_ready('{}.ngrams.tok'.format(filepath)) \
             and result_is_ready('{}.ngrams.pos'.format(filepath)) \
@@ -137,7 +141,7 @@ def train_nulls(filepath):
         .format(root=config.ROOT_DIR, cs=CONFUSION_SET, fp=filepath))
 
 def find_confusions(options, filepath, parallel=False):
-    log.debug("finding confusion examples from file: {}.txt".format(filepath))
+    log.info("finding confusion examples from file: {}.txt".format(filepath))
 
     if result_is_ready('{}.cnfs.empty'.format(filepath)):
         return
@@ -153,15 +157,15 @@ def find_confusions(options, filepath, parallel=False):
         exit()
         
     if input_is_parallel:
-        cmd.run("cut -f1 {0} > {1}".format(input_file, err_file))
-        cmd.run("cut -f2 {0} > {1}.gold".format(input_file, filepath))
+        cmd.cut(input_file, err_file)
+        cmd.cut(input_file, filepath + '.gold', col=2)
         if parallel:
             err_file = input_file
     else:
         cmd.ln(input_file, err_file)
 
-    if not options:
-        options = " -n {}.ngrams".format(filepath) 
+    if "-n " not in options:
+        options += " -n {}.ngrams".format(filepath) 
 
     cmd.run("{root}/find_confs.py -c {cs} -l tok,pos,awc {opts} {err_file} > {fp}.cnfs.empty" \
         .format(root=config.ROOT_DIR, cs=CONFUSION_SET, 
@@ -171,7 +175,7 @@ def find_confusions(options, filepath, parallel=False):
         cmd.wdiff(filepath + '.in', filepath + '.gold')
 
 def extract_features(filepath, options=''):
-    log.debug("extracting features for file {}.cnfs.empty".format(filepath))
+    log.info("extracting features for file {}.cnfs.empty".format(filepath))
 
     if result_is_ready('{}.cnfs'.format(filepath)):
         return
@@ -187,7 +191,7 @@ def print_confusion_statistics(filepath):
     log.info("training data statistics:\n{}".format(stats))
 
 def vectorize_features(options, filepath):
-    log.debug("vectorizing features from file {}.cnfs".format(filepath))
+    log.info("vectorizing features from file {}.cnfs".format(filepath))
 
     if result_is_ready('{}.data'.format(filepath)):
         return
@@ -199,7 +203,7 @@ def vectorize_features(options, filepath):
                 opts=options, fp=filepath))
 
 def train_classifier(model, options, filepath):
-    log.debug("training {} model from file {}.data".format(ALGORITHM, filepath))
+    log.info("training {} model from file {}.data".format(ALGORITHM, filepath))
 
     if result_is_ready(model):
         return
@@ -211,7 +215,7 @@ def train_classifier(model, options, filepath):
                 opts=options, model=model, fp=filepath))
 
 def run_classifier(model, options, filepath):
-    log.debug("running {} model from file {}.data".format(ALGORITHM, filepath))
+    log.info("running {} model from file {}.data".format(ALGORITHM, filepath))
 
     if result_is_ready('{}.pred'.format(filepath)):
         return
@@ -224,7 +228,7 @@ def run_classifier(model, options, filepath):
                 opts=options, model=model, fp=filepath))
 
 def inject_predictions(options, filepath):
-    log.debug("injecting predictions {0}.pred into {0}.in".format(filepath))
+    log.info("injecting predictions {0}.pred into {0}.in".format(filepath))
 
     if result_is_ready('{}.out'.format(filepath)):
         return
@@ -240,7 +244,7 @@ def inject_predictions(options, filepath):
     cmd.wdiff(filepath + '.in', filepath + '.out')
 
 def evaluate_predictions(options, filepath):
-    log.debug("evaluating predictions {0}.pred on {0}.cnfs".format(filepath))
+    log.info("evaluating predictions {0}.pred on {0}.cnfs".format(filepath))
 
     assert_file_exists(filepath + '.cnfs')
     assert_file_exists(filepath + '.pred')
@@ -250,7 +254,7 @@ def evaluate_predictions(options, filepath):
                 opts=options, fp=filepath))
 
 def run_grid_search(filepath):
-    log.debug("running grid searching on {0}.pred and {0}.cnfs".format(filepath))
+    log.info("running grid searching on {0}.pred and {0}.cnfs".format(filepath))
 
     assert_file_exists(filepath + '.cnfs')
     assert_file_exists(filepath + '.pred')
@@ -259,55 +263,52 @@ def run_grid_search(filepath):
         .format(root=config.ROOT_DIR, cs=CONFUSION_SET, frm=FORMAT, fp=filepath))
 
     thr, dif = output.split("\t")[:2]
-    log.debug("grid search found tunning options: t={} d={}".format(thr, dif))
+    log.info("grid search found tunning options: t={} d={}".format(thr, dif))
 
     return " -t {} -d {}".format(thr, dif)
 
-def evaluate_on_conll_data(filepath, year):
-    log.debug("evaluating on CoNLL {} test sets".format(year))
+def evaluate_m2(filepath):
+    log.info("evaluating on M^2 file: {}.m2".format(filepath))
 
     assert_file_exists(filepath + '.out')
+    assert_file_exists(filepath + '.m2')
 
-    for name, m2_file in config.CONLL.TEST_SETS[year].iteritems():
-        orig_tok = config.CONLL.ORIGINAL_TOKS[year]
-        cmd.run("{root}/eval_m2.py -o {orig} -t {fp}.out.retok {fp}.out {m2} >> {fp}.eval" \
-            .format(root=config.ROOT_DIR, orig=orig_tok, m2=m2_file, fp=filepath))
-    
-    cmd.wdiff(filepath + '.out', filepath + '.out.retok')
+    cmd.run("{root}/eval_m2.py {fp}.out {fp}.m2 >> {fp}.eval" \
+        .format(root=config.ROOT_DIR, fp=filepath))
 
-    orig_tok = config.CONLL.ORIGINAL_TOKS[year]
-    cmd.ln(filepath + '.out.retok', filepath + '.out.conll')
-    cmd.wdiff(orig_tok, filepath + '.out.conll')
-
-def run_conll_grid_search(filepath, year):
-    log.debug("running CoNLL grid searching on {0}.pred and {0}.cnfs".format(filepath))
+def run_m2_grid_search(filepath):
+    log.info("running CoNLL grid searching on {0}.pred and {0}.cnfs".format(filepath))
 
     assert_file_exists(filepath + '.in')
     assert_file_exists(filepath + '.cnfs')
     assert_file_exists(filepath + '.pred')
-
-    m2_file = config.CONLL.TEST_SETS[year]['allerrors']
-    orig_tok = config.CONLL.ORIGINAL_TOKS[year]
+    assert_file_exists(filepath + '.m2')
 
     output = cmd.run("{root}/tune_m2.py -c {cs} -f {frm} -g {fp}.eval.m2.grid -w {fp}.m2gs "
-        "--m2 {m2} -o {orig} {fp}.in {fp}.cnfs {fp}.pred" \
-        .format(root=config.ROOT_DIR, cs=CONFUSION_SET, frm=FORMAT, 
-                m2=m2_file, orig=orig_tok, fp=filepath))
+        "--m2 {fp}.m2 {fp}.in {fp}.cnfs {fp}.pred" \
+        .format(root=config.ROOT_DIR, cs=CONFUSION_SET, frm=FORMAT, fp=filepath))
 
     thr, dif = output.split("\t")[:2]
-    log.debug("CoNLL grid search found tunning options: t={} d={}".format(thr, dif))
+    log.info("M^2 grid search found tunning options: t={} d={}".format(thr, dif))
 
     return " -t {} -d {}".format(thr, dif)
+
+
+def make_m2_parallel(filepath):
+    log.debug("making parallel files from M2 file: {}.m2".format(filepath))
+
+    cmd.run("cat {fp}.m2 | perl {root}/make_parallel.perl > {fp}.txt" \
+        .format(root=config.SCRIPTS_DIR, fp=filepath))
+    cmd.source_side_of_file(filepath + '.txt', filepath + '.in')
 
 def result_is_ready(file):
     if os.path.exists(file):
         if os.stat(file).st_size == 0:
             log.error("result file {} exists but is empty!".format(file))
             exit()
-        log.debug("step is skipped as result file {} is ready".format(file))
+        log.info("step is skipped as result file {} is ready".format(file))
         return True
     return False
-
 
 def assert_file_exists(file):
     if not os.path.exists(file):
@@ -321,34 +322,26 @@ def assert_file_exists(file):
 def parse_user_arguments():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-t", "--train", type=str, 
-        help="train classifier on parallel texts")
-    parser.add_argument("-r", "--run", type=str, nargs="*", 
-        help="run classifier")
-    parser.add_argument("-a", "--algorithm", choices=ALGORITHMS, 
-        help="classification algorithm")
-    parser.add_argument("-m", "--model", required=True, type=str, 
-        help="classifier model")
-    parser.add_argument('-c', '--confusion-set', type=str, required=True, 
+    base = parser.add_argument_group("base arguments")
+    base.add_argument('-c', '--confusion-set', type=str, 
         help="confusion set as comma-separated list of words")
-
-    input = parser.add_argument_group("input/output arguments")
-    input.add_argument("--cnfs", action='store_true', 
-        help="training data are .cnfs files")
-    input.add_argument("-d", "--work-dir", default=str(os.getpid()), type=str, 
+    base.add_argument("-a", "--algorithm", choices=ALGORITHMS, 
+        help="classification algorithm")
+    base.add_argument("-m", "--model", required=True, type=str, 
+        help="classifier model")
+    base.add_argument("-d", "--work-dir", default=str(os.getpid()), type=str, 
         help="working directory")
 
-    eval = parser.add_argument_group("evaluation arguments")
-    eval.add_argument("-e", "--eval", action='store_true', 
-        help="evaluate inputs; each input file should contain parallel texts")
-    eval.add_argument("--grid-search", action='store_true', 
-        help="estimates evaluation threshold values using grid search")
-
-    eval.add_argument("--conll-eval", type=str, nargs="*", 
-        choices=config.CONLL.TEST_SETS.keys(), 
-        help="evaluate on predefined CoNLL Shared Task test set")
-    eval.add_argument("--conll-grid-search", action='store_true', 
-        help="estimates evaluation threshold values using grid search")
+    parser.add_argument("-t", "--train", type=str, 
+        help="train classifier on parallel texts")
+    parser.add_argument("-r", "--run", type=str,
+        help="run classifier")
+    parser.add_argument("-u", "--tune", type=str, 
+        help="tune classifier")
+    parser.add_argument("-e", "--eval", action='store_true', 
+        help="evaluate classifier; file given in --run argument should contain parallel text")
+    parser.add_argument("--m2", action='store_true',
+        help="assume tuning and running files are in M^2 format")
 
     opts = parser.add_argument_group("external scripts' arguments")
     opts.add_argument("--cnf-opts", type=str, default='',
@@ -368,26 +361,18 @@ def parse_user_arguments():
         assert_file_exists(args.train)
             
     if args.run:
-        for file in args.run:
-            assert_file_exists(file)
+        assert_file_exists(args.run)
         args = load_setting_file(args)
+
+    if args.tune:
+        assert_file_exists(args.tune)
+        if not args.eval:
+            args.eval = True
 
     if args.eval and not args.run:
         raise ArgumentError("argument --eval requires --run")
-    if args.conll_eval and not args.run:
-        raise ArgumentError("argument --conll-eval requires --run")
-    if args.conll_eval and len(args.run) != len(args.conll_eval):
-        raise ArgumentError("argument --conll-eval has to be specified once"
-            " for each --run file")
-    if args.grid_search and not args.eval:
-        raise ArgumentError("argument --grid-search requires --eval")
-    if args.conll_grid_search and not args.conll_eval:
-        raise ArgumentError("argument --conll-grid-search requires"
-            " --conll-eval")
-
-    #if args.algorithm not in ALGORITHMS:
-        #raise ArgumentError("argument --algorithm with value {}" \
-            #" probably requires --default".format(args.algorithm))
+    if args.m2 and not args.run:
+        raise ArgumentError("argument --m2 requires --run")
 
     log.debug(args)
     return args
