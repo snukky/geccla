@@ -757,13 +757,13 @@ def forker(forks, system_path, m2_path, beta, max_unchanged_words,
     return calc_f(stat_correct, stat_proposed, stat_gold, beta)
 
 
-def m2scorer(system_file, gold_file,
+def m2scorer(txt_file, m2_file,
              max_unchanged_words=3, beta=0.5, ignore_whitespace_casing=False,
              forks=cpu_count()):
     """
     An interface method for forked version of M^2 scoring script.
     """
-    return forker(forks, system_file, gold_file,
+    return forker(forks, txt_file, m2_file,
                   beta, max_unchanged_words, ignore_whitespace_casing)
 
 
@@ -773,11 +773,13 @@ if __name__ == "__main__":
     ignore_whitespace_casing = False
     verbose = False
     very_verbose = False
+    forks = cpu_count()
     opts, args = getopt(sys.argv[1:], "v", ["max_unchanged_words=",
                                             "beta=",
                                             "verbose",
                                             "ignore_whitespace_casing",
-                                            "very_verbose"])
+                                            "very_verbose",
+                                            "forks="])
     for o, v in opts:
         if o in ('-v', '--verbose'):
             verbose = True
@@ -789,6 +791,8 @@ if __name__ == "__main__":
             beta = float(v)
         elif o == '--ignore_whitespace_casing':
             ignore_whitespace_casing = True
+        elif o == '--forks':
+            forks = int(v)
         else:
             print >> sys.stderr, "Unknown option :", o
             #print_usage()
@@ -802,7 +806,6 @@ if __name__ == "__main__":
     system_file = args[0]
     gold_file = args[1]
 
-    forks = cpu_count()
     p, r, f1 = forker(forks, system_file, gold_file,
                       beta, max_unchanged_words, ignore_whitespace_casing)
 

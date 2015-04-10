@@ -9,7 +9,6 @@ from preprocess.letter_case import restore_file_case
 from prediction.output_formatter import inject_predictions
 from prediction import parse_pred_file
 
-from evaluation.m2scorer_fork import m2scorer
 from evaluation.grid_search import grid_search_generator
 from evaluation.grid_search import find_minmax_params
 
@@ -62,13 +61,12 @@ def evaluate_m2(text_file, m2_file):
     if num_of_lines != num_of_sents:
         log.error("Input file and M2 file differ in number of sentences: "
             "{} != {}".format(num_of_lines, num_of_sents))
-
-    #return m2scorer(text_file, m2_file, 
-                    #beta=0.5, max_unchanged_words=3,
-                    #forks=config.THREADS)
-
-    result = cmd.run("python {root}/evaluation/m2scorer_fork.py --beta 0.5 "
-        "--max_unchanged_words 3 {txt} {m2}" \
-        .format(root=config.ROOT_DIR, txt=text_file, m2=m2_file))
+    
+    # Scorer is run by system shell because of the bug inside the scorer script
+    # which cause the propagation of forked threads to this script.
+    result = cmd.run("python {scr}/m2scorer_fork --forks {th} " \
+        "--beta 0.5 --max_unchanged_words 3 {txt} {m2}" \
+        .format(scr=config.SCRIPTS_DIR, th=config.THREADS, 
+                txt=text_file, m2=m2_file))
 
     return tuple(float(line.split()[-1]) for line in result.strip().split("\n"))

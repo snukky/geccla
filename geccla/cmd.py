@@ -53,6 +53,9 @@ def is_parallel_file(file):
             return True
     return False
 
+def base_filename(file):
+    return os.path.splitext(os.path.basename(file))[0]
+
 def base_filepath(dir, file):
     filename = os.path.split(file)[1]
     filepath = os.path.join(dir, os.path.splitext(filename)[0])
