@@ -20,8 +20,10 @@ test2014.cor: test2014.txt
 test2014.err: test2014.txt
 	cut -f1 $? > $@
 
-test2014.txt:
-	cat $(CONLL_TEST2014_M2) | $(GECCLA_DIR)/scripts/make_parallel.perl > $@
+test2014.txt: test2014.m2
+	cat $? | $(GECCLA_DIR)/scripts/make_parallel.perl > $@
+test2014.m2:
+	cat $(CONLL_TEST2014_M2) > $@
 
 clean-test2014:
 	rm -f test2014.txt test2014.err test2014.cor
@@ -32,8 +34,10 @@ test2013.cor: test2013.txt
 test2013.err: test2013.txt
 	cut -f1 $? > $@
 
-test2013.txt:
-	cat $(CONLL_TEST2013_M2) | $(GECCLA_DIR)/scripts/make_parallel.perl > $@
+test2013.txt: test2013.m2
+	cat $? | $(GECCLA_DIR)/scripts/make_parallel.perl > $@
+test2013.m2:
+	cat $(CONLL_TEST2013_M2) > $@
 
 clean-test2013:
 	rm -f test2013.txt test2013.err test2013.cor
@@ -44,8 +48,10 @@ nucle.cor: nucle.txt
 nucle.err: nucle.txt
 	cut -f1 $? > $@
 
-nucle.txt:
-	cat $(CONLL_NUCLE_M2) | $(GECCLA_DIR)/scripts/make_parallel.perl > $@
+nucle.txt: nucle.m2
+	cat $? | $(GECCLA_DIR)/scripts/make_parallel.perl > $@
+nucle.m2:
+	cat $(CONLL_NUCLE_M2) > $@
 
 clean-nucle:
 	rm -f nucle.txt nucle.err nucle.cor
