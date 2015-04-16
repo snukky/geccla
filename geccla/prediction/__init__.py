@@ -28,7 +28,7 @@ def iterate_text_confs_and_preds(text_file, cnfs_file, preds):
         pred_data = []
 
         while cnfs_n == n:
-            pred_data.append( (i, j, err, cor, preds[i]) )
+            pred_data.append( (i, j, err, cor, preds[m]) )
             cnfs_n, i, j, err, cor, _ = parse_conf_line(cnfs_io.readline())
             m += 1
         
@@ -39,8 +39,8 @@ def iterate_text_confs_and_preds(text_file, cnfs_file, preds):
     cnfs_io.close()
     
 
-def iterate_confs_and_preds(cnfs_file, preds, thr=None, dif=None, lowercase=False):
-
+def iterate_confs_and_preds(cnfs_file, preds, thr=None, dif=None, 
+                            lowercase=False):
     with open(cnfs_file) as cnfs_io:
         for i, line in enumerate(cnfs_io):
             _, _, _, err, cor, _ = parse_conf_line(line)
@@ -99,6 +99,7 @@ def parse_pred_file(pred_file, format, conf_set):
             for i, line in enumerate(file):
                 if i == 0:
                     labels = line.strip().split()[1:]
+                    log.debug("LIBSVM labels: {}".format(' '.join(labels)))
                     continue
                 fields = line.strip().split()
                 values = fields[1:]
@@ -132,6 +133,7 @@ def parse_pred_file(pred_file, format, conf_set):
 
     if format in FORMATS_NEEDED_NORMALIZATION:
         return normalize_predictions(predictions)
+
     return predictions
 
 def __number_of_predictions(pred_file, format):
