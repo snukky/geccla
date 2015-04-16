@@ -7,12 +7,18 @@ CONLL_TEST2014_M2 = /home/romang/data/nucle/nucle.test2014.m2
 
 LANG8_NAIST = /home/romang/data/lang8/lang8-naist.nltktok.clean.txt
 
+# LANG8 NAIST + NUCLE
+nucle+lang8.txt: nucle.075.txt lang8.txt
+	cat $? > $@
 
 # LANG8 NAIST
-lang8.cor: $(LANG8_NAIST)
+lang8.cor: lang8.txt
 	cut -f2 $? > $@
-lang8.err: $(LANG8_NAIST)
+lang8.err: lang8.txt
 	cut -f1 $? > $@
+
+lang8.txt: $(LANG8_NAIST)
+	cat $? > $@
 
 # TEST2014
 test2014.cor: test2014.txt
@@ -26,7 +32,7 @@ test2014.m2:
 	cat $(CONLL_TEST2014_M2) > $@
 
 clean-test2014:
-	rm -f test2014.txt test2014.err test2014.cor
+	rm -f test2014.txt test2014.err test2014.cor test2014.m2*
 
 # TEST2013
 test2013.cor: test2013.txt
@@ -40,7 +46,19 @@ test2013.m2:
 	cat $(CONLL_TEST2013_M2) > $@
 
 clean-test2013:
-	rm -f test2013.txt test2013.err test2013.cor
+	rm -f test2013.txt test2013.err test2013.cor test2013.m2*
+
+# NUCLE 1/4 and 3/4 for cross evaluation
+nucle.075.txt: nucle.075.m2
+	cat $? | $(GECCLA_DIR)/scripts/make_parallel.perl > $@
+nucle.075.m2: nucle.025.m2
+	cat nucle.m2.01 nucle.m2.02 nucle.m2.03 > $@
+
+nucle.025.txt: nucle.025.m2
+	cat $? | $(GECCLA_DIR)/scripts/make_parallel.perl > $@
+nucle.025.m2: nucle.m2
+	$(GECCLA_DIR)/scripts/split_m2.py -n 4 $?
+	cat $?.00 > $@
 
 # NUCLE
 nucle.cor: nucle.txt
@@ -54,7 +72,7 @@ nucle.m2:
 	cat $(CONLL_NUCLE_M2) > $@
 
 clean-nucle:
-	rm -f nucle.txt nucle.err nucle.cor
+	rm -f nucle.txt nucle.err nucle.cor nucle.m2* nucle.0?5.txt nucle.0?5.m2
 
 # CLEAN
 clean: clean-nucle clean-test2013 clean-test2014
