@@ -1,3 +1,10 @@
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(__file__))
+
+from logger import log
+
 
 class ConfusionSet:
 
@@ -8,6 +15,7 @@ class ConfusionSet:
         else:
             self.cs = self.__prepare_confusion_set(conf_set)
             self.non_nulls = [cw for cw in self.cs if cw != '<null>']
+            log.debug(self.__str__())
 
 
     def include(self, word):
@@ -21,7 +29,7 @@ class ConfusionSet:
         return self.include('')
 
     def as_list(self):
-        return self.cs
+        return list(self.cs)
 
     def size(self):
         """Returns the number of confused words."""
@@ -39,6 +47,9 @@ class ConfusionSet:
             return self.cs[num_label - start_from]
         return None
 
+    def num_labels(self, start_from=0):
+        return {self.word_to_num_label(word, start_from):word 
+                for word in self.cs}
 
     def __prepare_confusion_set(self, words):
         cs = ['<null>' if w.strip() == '' else w.strip().lower() 
@@ -50,7 +61,7 @@ class ConfusionSet:
             yield cw
 
     def __str__(self):
-        return "{{{}}}" % ','.join(self.cs)
+        return "cs= %s" % self.num_labels()
 
     def __repr__(self):
         return """<ConfusionSet %s>""" % self.cs

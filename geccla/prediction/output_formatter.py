@@ -28,56 +28,66 @@ def inject_predictions(conf_set, format,
 
 class OutputFormatter():
     
-    def __init__(self, conf_set, restore_case=True):
+    def __init__(self, conf_set, restore_case=True, debug=False):
         self.confusion_set = ConfusionSet(conf_set)
         self.restore_case = restore_case
+        self.debug = debug
 
     def text_output(self, text_file, cnfs_file, pred_file, 
                           format, 
-                          threshold, difference,
-                          debug=False):
+                          threshold, difference):
         
-        log.info("injecting predictions from file {} with params t={} d={}" \
-            .format(pred_file, threshold, difference))
-
         preds = parse_pred_file(pred_file, format, self.confusion_set)
 
+        log.info("injecting predictions from file {} with params t={} d={}" \
+            .format(pred_file, threshold, difference))
+        changes = 0
+
         for n, text, data in iterate_text_confs_and_preds(text_file, cnfs_file, preds):
-            if debug:
-                log.debug("{n}: {txt}".format(n=n, txt=text))
-
-            yield self.__format_sentence(text, data, threshold, difference, 
-                                         n=n, debug=debug)
-
-    def __format_sentence(self, sent, data, 
-                                thr=None, dif=None, 
-                                n=None, debug=False):
-        tokens = sent.split()
-
-        for i, j, err, _, answers in data:
-            pred = get_best_prediction(err, answers, thr, dif)
-    
-            real_err = ' '.join(tokens[i:j])
-            if not self.confusion_set.include(real_err):
+            if self.debug:
+                tokens = text.split()
                 debug_toks = [str(elem) 
                               for pair in zip(tokens, xrange(len(tokens)))
                               for elem in reversed(pair)]
-                log.warn("shift error {} ({},{}) {}: {}".format(n, i, j, 
-                    real_err, '_'.join(debug_toks)))
+                log.debug("{}: {}".format(n, '_'.join(debug_toks)))
+
+            new_text, c = self.__format_sentence(text, data, threshold, difference)
+            changes += c
+            yield new_text
+
+        if self.debug:
+            log.debug("number of changes: {}".format(changes))
+
+    def __format_sentence(self, sent, data, thr=None, dif=None):
+        tokens = sent.split()
+        changes = 0
+
+        for i, j, err, _, answers in data:
+            pred = get_best_prediction(err, answers, thr, dif)
+            
+            real_err = ' '.join(tokens[i:j])
+            if not self.confusion_set.include(real_err):
+                log.warn("  shift error: ({},{}) '{}'".format(i, j, real_err))
+
 
             if err.lower() != pred.lower():
-                if debug:
+                changes += 1
+
+                if self.debug:
                     log.debug("  ({},{}) {} -> {}".format(i, j, err, pred))
+                    log.debug("  answers: {}".format(answers))
 
                 if pred == '<null>':
                     pred = ''
-
                 if i == j:
                     pred += ' ' + tokens[i]
                 tokens[i] = pred
     
         new_sent = re.sub(r'\s\s+' , ' ', ' '.join(tokens))
+        if self.restore_case and new_sent != sent:
+            new_sent = restore_sentence_case(new_sent, sent, debug=False)
 
-        if self.restore_case:
-            return restore_sentence_case(new_sent, sent, debug=False)
-        return new_sent
+            if self.debug:
+                log.debug("  changes: {}".format(changes))
+
+        return (new_sent, changes)

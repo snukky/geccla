@@ -12,7 +12,7 @@ class BasicFinder():
     def __init__(self, conf_set):
         self.confusion_set = ConfusionSet(conf_set) 
 
-    def find_confusion_instances(self, corpus):
+    def find_confusion_words(self, corpus):
         with open(corpus) as corpus_io:
             for s, line in enumerate(corpus_io):
                 err_toks, edits = self.parse_corpus_line(line)
@@ -20,8 +20,10 @@ class BasicFinder():
                 for i, err in enumerate(err_toks):
                     if (i,i+1) in edits:
                         cor = edits[(i,i+1)][1]
+                        #if cor != '<null>':
                         yield (s, i, i+1, err, cor)
                     elif (i,i) in edits:
+                        pass
                         cor = edits[(i,i)][1]
                         yield (s, i, i, '<null>', cor)
                     elif self.confusion_set.include(err):

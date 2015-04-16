@@ -1,7 +1,4 @@
 
-METRICS = {
-}
-
 def accuracy(tp, tn, fp, fn):
     return (tp + tn) / float(tp + tn + fp + fn)
 
@@ -29,5 +26,14 @@ def edits_count(tp, tn, fp, fn, xyz):
     skipped_ab_edits = fn / float(fn + tp + xyz) if fn + tp + xyz != 0 else 0
     return (acc, aa_edits, ab_edits, skipped_ab_edits)
 
-def true_negative_rate(tp, tn, fp, fn):
+def specificity(tp, tn, fp, fn):
     return tn / float(tn + fp)
+
+def fall_out(tp, tn, fp, fn):
+    return fp / float(tn + fp)
+
+def bias(tp, tn, fp, fn):
+    return (tp + fp) / float(tp + tn + fp + fn)
+
+def prevalence(tp, tn, fp, fn):
+    return (tp + fn) / float(tp + tn + fp + fn)

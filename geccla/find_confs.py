@@ -56,16 +56,17 @@ def parse_user_arguments():
     if not args.confusion_set and args.ngrams_prefix:
         raise ArgumentError("argument --ngrams-prefix requires --confusion-set")
 
+    if not args.artordet and args.levels:
+        args.levels = list(set(args.levels.split(',')))
+        if not all(lvl in NullFinder.LEVELS for lvl in args.levels):
+            raise ArgumentError("allowed values for --levels argument are {}" \
+                .format(', '.join(NullFinder.LEVELS)))
+
     if args.artordet:
         args.confusion_set = 'a,an,the,'
         if not args.levels:
             args.levels = 2
         args.levels = int(args.levels)
-    else:
-        args.levels = list(set(args.levels.split(',')))
-        if not all(lvl in NullFinder.LEVELS for lvl in args.levels):
-            raise ArgumentError("allowed values for --levels argument are {}" \
-                .format(', '.join(NullFinder.LEVELS)))
 
     return args
 

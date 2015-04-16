@@ -11,11 +11,10 @@ from prediction.output_formatter import OutputFormatter
 def main():
     args = parse_user_arguments()
 
-    frm = OutputFormatter(args.confusion_set)
+    frm = OutputFormatter(args.confusion_set, debug=args.debug)
     for line in frm.text_output(args.text_file, args.cnfs_file, args.pred_file, 
                                 args.format,
-                                args.threshold, args.difference,
-                                debug=False):
+                                args.threshold, args.difference):
         print line
 
 
@@ -39,6 +38,9 @@ def parse_user_arguments():
     eval.add_argument('-d', '--difference', type=float,
         help="minimum confidence difference between best and second"
         " classifier prediction") 
+
+    parser.add_argument('--debug', action='store_true',
+        help="run in verbose debug mode")
 
     return parser.parse_args()
 

@@ -103,14 +103,14 @@ def calculate_param_sets(min_max_params=(0.0, 1.0, 0.0, 1.0), num_of_steps=10):
     log.info("min/max threshold: {}/{}".format(min_thr, max_thr))
     log.info("min/max difference: {}/{}".format(min_dif, max_dif))
 
-    thr_step = (max_thr - min_thr) / float(num_of_steps - 1)
-    dif_step = (max_dif - min_dif) / float(num_of_steps - 1)
+    thr_step = (max_thr - min_thr) / float(num_of_steps)
+    dif_step = (max_dif - min_dif) / float(num_of_steps)
 
     log.info("threshold step: {}".format(thr_step))
     log.info("difference step: {}".format(dif_step))
 
-    thrs = sorted(list(set([0.0] + __frange(min_thr, max_thr, thr_step))))
-    difs = sorted(list(set([0.0] + __frange(min_dif, max_dif, dif_step))))
+    thrs = [0.0] + sorted(list(__frange(min_thr, max_thr, thr_step)[1:-1]))
+    difs = [0.0] + sorted(list(__frange(min_dif, max_dif, dif_step)[1:-1]))
 
     log.info("threshold params: {}".format(thrs))
     log.info("difference params: {}".format(difs))

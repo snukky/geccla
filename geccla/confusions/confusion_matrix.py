@@ -54,7 +54,7 @@ class ConfusionMatrix():
     def __build_matrix(self, cnfs_file):
         output = cmd.run("cat {0} | tr -s '|||' '\t' | cut -f3,4 | "
             "sort | uniq -c".format(cnfs_file))
-        #log.debug("raw edit counts:\n{}".format(output))
+        log.debug("raw edit counts:\n{}".format(output))
     
         matrix = {}
         for err in self.confusion_set:
