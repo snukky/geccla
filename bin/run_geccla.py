@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../g
 
 from classification import ALGORITHMS
 from classification import algorithm_to_format
+from confusion_set import ConfusionSet
 
 import cmd
 import config
@@ -39,7 +40,7 @@ def main():
         
         cmd.ln(args.train, train_file + '.txt')
 
-        if "-n " not in args.cnf_opts:
+        if null_in_confset() and "-n " not in args.cnf_opts:
             train_nulls(train_file)
             args.cnf_opts += " -n {}.ngrams".format(train_file)
 
@@ -54,30 +55,31 @@ def main():
         create_setting_file(args)
 
     if args.run:
-        log.info("RUNNING ON FILE: {}".format(args.run))
-        run_file = cmd.base_filepath(args.work_dir, args.run)
+        for run in args.run:
+            log.info("RUNNING ON FILE: {}".format(run))
+            run_file = cmd.base_filepath(args.work_dir, run)
         
-        if args.m2:
-            cmd.ln(args.run, run_file + '.m2')
-            make_m2_parallel(run_file)
-        else:
-            cmd.ln(args.run, run_file + '.txt')
+            if args.m2:
+                cmd.ln(run, run_file + '.m2')
+                make_m2_parallel(run_file)
+            else:
+                cmd.ln(run, run_file + '.txt')
 
-        find_confusions(args.cnf_opts, run_file, parallel=args.eval)
-        extract_features(run_file, args.ext_opts)
+            find_confusions(args.cnf_opts, run_file, parallel=args.eval)
+            extract_features(run_file, args.ext_opts)
 
-        print_confusion_statistics(run_file)
-        vectorize_features(args.vec_opts, run_file)
-        run_classifier(args.model, args.cls_opts, run_file)
+            print_confusion_statistics(run_file)
+            vectorize_features(args.vec_opts, run_file)
+            run_classifier(args.model, args.cls_opts, run_file)
 
-        inject_predictions(args.evl_opts, run_file)
+            inject_predictions(args.evl_opts, run_file)
 
-    if args.eval:
-        log.info("EVALUATING FILE: {}".format(file))
+            if args.eval:
+                log.info("EVALUATING FILE: {}".format(run))
 
-        evaluate_predictions(args.evl_opts, run_file)
-        if args.m2:
-            evaluate_m2(run_file)
+                evaluate_predictions(args.evl_opts, run_file)
+                if args.m2:
+                    evaluate_m2(run_file)
 
     if args.tune:
         log.info("TUNNING ON FILE: {}".format(args.tune))
@@ -104,27 +106,32 @@ def main():
             new_evl_opts = run_m2_grid_search(tune_file)
         else:
             new_evl_opts = run_grid_search(tune_file)
-
+        
         args.evl_opts = new_evl_opts
         create_setting_file(args)
     
     if args.tune and args.eval:
-        log.info("EVALUATING AFTER TUNNING ON FILE: {}".format(args.tune))
+        for run in args.run:
+            log.info("EVALUATING AFTER TUNNING ON FILE: {}".format(run))
+            run_file = cmd.base_filepath(args.work_dir, run)
 
-        cmd.ln(run_file + '.cnfs', run_file + '.best.cnfs')
-        cmd.ln(run_file + '.pred', run_file + '.best.pred')
-        evaluate_predictions(new_evl_opts, run_file + '.best')
+            cmd.ln(run_file + '.cnfs', run_file + '.best.cnfs')
+            cmd.ln(run_file + '.pred', run_file + '.best.pred')
+            evaluate_predictions(new_evl_opts, run_file + '.best')
 
-        if args.m2:
-            cmd.ln(run_file + '.m2', run_file + '.best.m2')
             cmd.ln(run_file + '.in', run_file + '.best.in')
             inject_predictions(new_evl_opts, run_file + '.best')
-            evaluate_m2(run_file + '.best')
+
+            if args.m2:
+                cmd.ln(run_file + '.m2', run_file + '.best.m2')
+                evaluate_m2(run_file + '.best')
             
-    if args.eval:
-        log.info("\n" + cmd.run("cat {0}.eval".format(run_file)))
-    if tune_file:
-        log.info("\n" + cmd.run("cat {0}.best.eval".format(run_file)))
+    for run in args.run:
+        run_file = cmd.base_filepath(args.work_dir, run)
+        if args.eval:
+            log.info("\n" + cmd.run("cat {0}.eval".format(run_file)))
+        if args.tune:
+            log.info("\n" + cmd.run("cat {0}.best.eval".format(run_file)))
 
 
 def train_nulls(filepath):
@@ -140,7 +147,7 @@ def train_nulls(filepath):
     cmd.run("{root}/train_nulls.py -c {cs} -l tok,pos,awc -n {fp}.ngrams {fp}.txt" \
         .format(root=config.ROOT_DIR, cs=CONFUSION_SET, fp=filepath))
 
-def find_confusions(options, filepath, parallel=False):
+def find_confusions(options, filepath, parallel=False, confset=None):
     log.info("finding confusion examples from file: {}.txt".format(filepath))
 
     if result_is_ready('{}.cnfs.empty'.format(filepath)):
@@ -164,7 +171,7 @@ def find_confusions(options, filepath, parallel=False):
     else:
         cmd.ln(input_file, err_file)
 
-    if "-n " not in options:
+    if null_in_confset() and "-n " not in options:
         options += " -n {}.ngrams".format(filepath) 
 
     cmd.run("{root}/find_confs.py -c {cs} -l tok,pos,awc {opts} {err_file} > {fp}.cnfs.empty" \
@@ -256,6 +263,9 @@ def evaluate_predictions(options, filepath):
 def run_grid_search(filepath):
     log.info("running grid searching on {0}.pred and {0}.cnfs".format(filepath))
 
+    if result_is_ready('{}.params'.format(filepath)):
+        return cmd.run('cat {}.params'.format(filepath))
+
     assert_file_exists(filepath + '.cnfs')
     assert_file_exists(filepath + '.pred')
 
@@ -265,7 +275,9 @@ def run_grid_search(filepath):
     thr, dif = output.split("\t")[:2]
     log.info("grid search found tunning options: t={} d={}".format(thr, dif))
 
-    return " -t {} -d {}".format(thr, dif)
+    opts = " -t {} -d {}".format(thr, dif)
+    cmd.run("echo '{}' > {}.params".format(opts, filepath))
+    return opts
 
 def evaluate_m2(filepath):
     log.info("evaluating on M^2 file: {}.m2".format(filepath))
@@ -279,6 +291,9 @@ def evaluate_m2(filepath):
 def run_m2_grid_search(filepath):
     log.info("running CoNLL grid searching on {0}.pred and {0}.cnfs".format(filepath))
 
+    if result_is_ready('{}.params'.format(filepath)):
+        return cmd.run('cat {}.params'.format(filepath))
+
     assert_file_exists(filepath + '.in')
     assert_file_exists(filepath + '.cnfs')
     assert_file_exists(filepath + '.pred')
@@ -291,8 +306,12 @@ def run_m2_grid_search(filepath):
     thr, dif = output.split("\t")[:2]
     log.info("M^2 grid search found tunning options: t={} d={}".format(thr, dif))
 
-    return " -t {} -d {}".format(thr, dif)
+    opts = " -t {} -d {}".format(thr, dif)
+    cmd.run("echo '{}' > {}.params".format(opts, filepath))
+    return opts
 
+def null_in_confset():
+    return ConfusionSet(CONFUSION_SET).include_null()
 
 def make_m2_parallel(filepath):
     log.debug("making parallel files from M2 file: {}.m2".format(filepath))
@@ -327,14 +346,14 @@ def parse_user_arguments():
         help="confusion set as comma-separated list of words")
     base.add_argument("-a", "--algorithm", choices=ALGORITHMS, 
         help="classification algorithm")
-    base.add_argument("-m", "--model", required=True, type=str, 
+    base.add_argument("-m", "--model", type=str, 
         help="classifier model")
     base.add_argument("-d", "--work-dir", default=str(os.getpid()), type=str, 
         help="working directory")
 
     parser.add_argument("-t", "--train", type=str, 
         help="train classifier on parallel texts")
-    parser.add_argument("-r", "--run", type=str,
+    parser.add_argument("-r", "--run", nargs="*", type=str,
         help="run classifier")
     parser.add_argument("-u", "--tune", type=str, 
         help="tune classifier")
@@ -357,17 +376,21 @@ def parse_user_arguments():
 
     args = parser.parse_args()
 
+    if not args.model:
+        args.model = os.path.join(args.work_dir, '{}.model'.format(args.algorithm))
+
     if args.train:
         assert_file_exists(args.train)
             
     if args.run:
-        assert_file_exists(args.run)
+        for run in args.run:
+            assert_file_exists(run)
         args = load_setting_file(args)
 
     if args.tune:
         assert_file_exists(args.tune)
         if not args.eval:
-            args.eval = True
+            raise ArgumentError("argument --tune requires --eval")
 
     if args.eval and not args.run:
         raise ArgumentError("argument --eval requires --run")

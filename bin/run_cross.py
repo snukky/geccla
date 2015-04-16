@@ -35,13 +35,34 @@ def main():
         create_train_files(cross_filebase, part, args.parts, args.more_data)
 
         cross_file = cross_filebase + '.' + part
-        train_geccla(cross_file, args.algorithm, args.confusion_set, args.m2)
+        train_cross(cross_file, args.algorithm, args.confusion_set, args.m2)
 
         for eval in args.eval:
             log.info("PART {} - EVALUATING ON FILE: {}".format(part, eval))
-            eval_geccla(cross_file, eval, args.m2)
+            eval_cross(cross_file, eval, args.m2)
 
-    evl_opts = collect_evaluation_params(cross_filebase, args.eval, args.parts)
+    log.info("AVERAGING PARAMS")
+    param_sets = collect_evaluation_params(cross_filebase, args.parts)
+    evl_opts = average_param_sets(param_sets)
+
+    log.info("TRAINING ON ALL DATA")
+    train_file = os.path.join(args.work_dir, 'train.txt')
+
+    if args.m2:
+        cmd.run("cat {data} | perl {root}/make_parallel.perl > {out}" \
+            .format(root=config.SCRIPTS_DIR, data=args.data, out=train_file))
+    else:
+        cmd.run("cat {data} > {out}".format(data=args.data, out=train_file))
+    if args.more_data:
+        cmd.run("cat {data} >> {out}".format(data=args.more_data, out=train_file))
+
+    release_dir = os.path.join(args.work_dir, 'release')
+    train_geccla(release_dir, train_file, args.algorithm, args.confusion_set, evl_opts)
+
+    for eval in args.eval:
+        log.info("EVALUATING FILE: {}".format(eval))
+        run_geccla(release_dir, eval, args.m2)
+    
 
 def split_m2_data(m2_file, filepath, num_of_parts):
     parts = format_parts(num_of_parts)
@@ -101,11 +122,14 @@ def create_train_files(filepath, part, num_of_parts, more_data=None):
                             if p != part])
 
     cmd.run("cat {} > {}.{}.train.txt".format(train_files, filepath, part))
-
     if more_data:
         cmd.run("cat {} >> {}.{}.train.txt".format(more_data, filepath, part))
 
-def train_geccla(crosspath, algorithm, confset, m2=False):
+
+def train_cross(crosspath, algorithm, confset, m2=False):
+    if not os.path.exists(crosspath):
+        os.makedirs(crosspath)
+
     ext = 'm2' if m2 else 'txt'
     command = "python {root}/../bin/run_geccla.py" \
         " --work-dir {cv}" \
@@ -119,28 +143,65 @@ def train_geccla(crosspath, algorithm, confset, m2=False):
         command += " --m2"
     cmd.run(command)
 
-def eval_geccla(crosspath, eval_file, m2=False):
+def eval_cross(crosspath, eval_file, m2=False):
     ext = 'm2' if m2 else 'txt'
-    eval_base = os.path.splitext(os.path.basename(eval_file))[0]
-
     command = "python {root}/../bin/run_geccla.py" \
         " --work-dir {cv} --model {cv}/cross.model" \
         " --run {eval} --eval" \
         " > {cv}/output.eval.{num} 2>&1" \
         .format(root=config.ROOT_DIR, cv=crosspath, ext=ext, 
-                eval=eval_file, num=eval_base)
+                eval=eval_file, num=cmd.base_filename(eval_file))
     if m2:
         command += " --m2"
     cmd.run(command)
 
-def collect_evaluation_params(filepath, evals, num_of_parts):
-    results = []
+def train_geccla(release_dir, train_file, algorithm, confset, evl_opts):
+    os.makedirs(release_dir)
+    command = "python {root}/../bin/run_geccla.py" \
+        " --work-dir {rel}" \
+        " --confusion-set {cs} --algorithm {alg} --model {rel}/release.model" \
+        " --train {train} --evl-opts ' {opts}'" \
+        " > {rel}/output.train 2>&1" \
+        .format(root=config.ROOT_DIR, alg=algorithm, cs=confset, 
+                train=train_file, rel=release_dir, opts=evl_opts)
+    cmd.run(command)
+
+def run_geccla(release_dir, eval_file, m2=False):
+    command = "python {root}/../bin/run_geccla.py" \
+        " --work-dir {rel} --model {rel}/release.model" \
+        " --run {eval} --eval" \
+        " > {rel}/output.eval.{num} 2>&1" \
+        .format(root=config.ROOT_DIR, rel=release_dir, eval=eval_file,
+                num=cmd.base_filename(eval_file))
+    if m2:
+        command += " --m2"
+    cmd.run(command)
+
+
+def collect_evaluation_params(filepath, num_of_parts):
+    param_sets = []
+
     for part in format_parts(num_of_parts):
-        for eval in evals:
-            file = "{}.{}/{}.eval".format(filepath, part, eval)
-            params = cmd.run("cat {} | grep '^threshold:|^difference:'".format(file))
-            results.append(params)
-    log.info("\n".join(results))
+        param_file = "{fp}.{p}/cross.{p}.params".format(fp=filepath, p=part)
+        if not os.path.exists(param_file):
+            log.warning("file with tuned params does not exist: {}".format(param_file))
+            continue
+
+        with open(param_file) as file:
+            fields = file.read().strip().split()
+        param_set = (float(fields[1]), float(fields[3]))
+        param_sets.append(param_set)
+
+    return param_sets
+
+def average_param_sets(param_sets):
+    if not param_sets:
+        log.error("no param set found!")
+        return ""
+    avg_thr = sum(pair[0] for pair in param_sets) / float(len(param_sets))
+    avg_dif = sum(pair[1] for pair in param_sets) / float(len(param_sets))
+    log.debug("averaged params: t={:.4f} d={:.4f}".format(avg.thr, avg.dif))
+    return "-t {} -d {}".format(avg_thr, avg_dif)
 
 
 def format_parts(size):
