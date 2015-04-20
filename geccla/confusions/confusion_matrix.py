@@ -10,50 +10,51 @@ from confusion_set import ConfusionSet
 from logger import log
 
 
-
 class ConfusionMatrix():
     
-    def __init__(self, conf_set, cnfs_file):
+    def __init__(self, cnfs_file, conf_set=None):
+        if not conf_set:
+            conf_set = self.__create_confusion_set(cnfs_file)
         self.confusion_set = ConfusionSet(conf_set)
         self.matrix = self.__build_matrix(cnfs_file)
     
     def print_stats(self):
         self.print_matrix()
         
-        num_of_confs = self.num_of_confs()
-        self.print_matrix(lambda x: "%.2f" % (x / float(num_of_confs) * 100))
+        num_of_edits = self.num_of_edits()
+        self.print_matrix(lambda x: "%.2f" % (x / float(num_of_edits) * 100))
     
-        print "all      :", num_of_confs
-        print "AA edits :", self.num_of_AA_confs()
-        print "AB edits :", self.num_of_AB_confs()
+        print "all      :", num_of_edits
+        print "AA edits :", self.num_of_AA_edits()
+        print "AB edits :", self.num_of_AB_edits()
         print "ER       : %.3f %%" % self.error_rate()
     
-    def print_matrix(self, format_function=lambda x: str(x)):
+    def print_matrix(self, format_func=lambda x: str(x)):
         print "\t |", "\t".join(self.confusion_set.as_list())
-        print "-------- |", "-" * (self.confusion_set.size())*9
+        print "-------- |", "-" * (self.confusion_set.size()) * 9
         for err in self.confusion_set:
             print err + "\t |",
             for cor in self.confusion_set:
-                print format_function(self.matrix[err][cor]), "\t",
+                print "{: <6} \t".format(format_func(self.matrix[err][cor])),
             print "\n",
         print ''
     
-    def num_of_confs(self):
+    def num_of_edits(self):
         return sum([ count for _, row in self.matrix.iteritems()
                            for _, count in row.iteritems() ])
     
-    def num_of_AA_confs(self):
+    def num_of_AA_edits(self):
         return sum(self.matrix[word][word] for word in self.confusion_set)
 
-    def num_of_AB_confs(self):
-        return self.num_of_confs() - self.num_of_AA_confs()
+    def num_of_AB_edits(self):
+        return self.num_of_edits() - self.num_of_AA_edits()
     
     def error_rate(self):
-        return self.num_of_AB_confs() / float(self.num_of_confs()) * 100
+        return self.num_of_AB_edits() / float(self.num_of_edits()) * 100
 
     def __build_matrix(self, cnfs_file):
-        output = cmd.run("cat {0} | tr -s '|||' '\t' | cut -f3,4 | "
-            "sort | uniq -c".format(cnfs_file))
+        output = cmd.run("cat {} | tr -s '|||' '\\t' | cut -f3,4" \
+            " | sed 's/.*/\\L&/' | sort | uniq -c".format(cnfs_file))
         log.debug("raw edit counts:\n{}".format(output))
     
         matrix = {}
@@ -69,3 +70,8 @@ class ConfusionMatrix():
             matrix[err][cor] += int(count)
     
         return matrix
+
+    def __create_confusion_set(self, cnfs_file):
+        output = cmd.run("cat {} | tr -s '|||' '\\t' | cut -f3,4 | tr '\\t' '\\n' "  \
+            " | sed 's/.*/\\L&/' | sort -u".format(cnfs_file))
+        return ','.join(output.strip().split())

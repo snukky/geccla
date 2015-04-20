@@ -10,7 +10,7 @@ from confusions.manipulate import impose_error_rate
 def main():
     args = parse_user_arguments()
 
-    matrix = ConfusionMatrix(args.confusion_set, args.cnfs_file)
+    matrix = ConfusionMatrix(args.cnfs_file, args.confusion_set)
     if args.error_rate:
         impose_error_rate(args.cnfs_file, args.error_rate / 100.0, matrix)
     else:
@@ -22,7 +22,7 @@ def parse_user_arguments():
 
     parser.add_argument('cnfs_file', help=".cnfs file")
 
-    parser.add_argument('-c', '--confusion-set', required=True,
+    parser.add_argument('-c', '--confusion-set', type=str,
         help="confusion set as comma-separated list of words")
     parser.add_argument('-e', '--error-rate', type=float,
         help="sampling to desired error rate by removin correct examples")
