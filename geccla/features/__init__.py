@@ -60,6 +60,18 @@ FEATURE_SETS = {
         'cB3A0 cB2A1 cB1A2 cB0A3 '
         'cB2A0 cB1A1 cB0A1 cB1A0 cB0A1'.split(),
 
+    'mixtokpos':
+        'mwpB5A0 mwpB4A1 mwpB3A2 mwpB2A3 mwpB1A4 mwpB0A5 '
+        'mwpB4A0 mwpB3A1 mwpB2A2 mwpB1A3 mwpB0A4 '
+        'mwpB3A0 mwpB2A1 mwpB1A2 mwpB0A3 '
+        'mwpB2A0 mwpB1A1 mwpB0A1 mwpB1A0 mwpB0A1'.split(),
+
+    'mixtokawc':
+        'mwcB5A0 mwcB4A1 mwcB3A2 mwcB2A3 mwcB1A4 mwcB0A5 '
+        'mwcB4A0 mwcB3A1 mwcB2A2 mwcB1A3 mwcB0A4 '
+        'mwcB3A0 mwcB2A1 mwcB1A2 mwcB0A3 '
+        'mwcB2A0 mwcB1A1 mwcB0A1 mwcB1A0 mwcB0A1'.split(),
+
     'src': ['src'],
 
     # A.Roz. features - word n-grams
@@ -100,7 +112,7 @@ sum_feature_sets('genall', 'tok pos awc')
 sum_feature_sets('genpos', 'tok pos')
 sum_feature_sets('gentok', 'tok awc')
 
-sum_feature_sets('all', 'tok pos awc')
+sum_feature_sets('all', 'tok pos awc mixtokpos mixtokawc')
 
 compose_feature_set('wordsBeforeNP', 'wB', 'NP1')
 compose_feature_set('Preposition', 'prep', 'NP1')

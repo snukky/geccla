@@ -11,6 +11,8 @@ from logger import log
 from classification import FORMATS
 
 from features import FEATURE_SETS
+from vectorization import create_freq_file
+from vectorization import create_feat_file
 
 
 class FeatureVectorizer():
@@ -53,8 +55,16 @@ class FeatureVectorizer():
         freq_file = cnfs_file + '.freq'
         feat_file = cnfs_file + '.feat'
     
-        self.create_freq_file(cnfs_file, freq_file)
-        self.create_feat_file(freq_file, feat_set, feat_file)
+        if os.path.exists(freq_file):
+            log.info("file with frequencies exists: {}".format(freq_file))
+        else:
+            create_freq_file(cnfs_file, freq_file)
+
+        if os.path.exists(feat_file):
+            log.info("file with features exists: {}".format(feat_file))
+        else:
+            create_feat_file(freq_file, feat_set, feat_file)
+
         self.__read_feature_vector(feat_file)
         
     def __read_feature_vector(self, feat_file):
@@ -167,44 +177,3 @@ class FeatureVectorizer():
             prop.write("useQN=true\n")
             prop.write("QNsize=15\n")
             prop.write("tolerance=1e-4\n")
-
-
-    def create_freq_file(self, cnfs_file, freq_file):
-        if os.path.exists(freq_file):
-            log.info("file with frequencies exists: {}".format(freq_file))
-            return
-            
-        log.info("counting frequencies...")
-        cmd.run("cat {} | sed 's/|||/\\t/g' | cut -f5 | tr ' ' '\\n' "
-            "| sort | uniq -c | sort -nr > {}".format(cnfs_file, freq_file))
-    
-    def create_feat_file(self, freq_file, feat_set, feat_file):
-        if os.path.exists(feat_file):
-            log.info("file with features exists: {}".format(feat_file))
-            return
-    
-        log.info("truncating features...")
-        log.info("minimum count for single feature: {}" \
-            .format(self.min_feat_count))
-    
-        line_num = cmd.run("cat {} | grep -Pn ' +{} .*' | tr ':' '\\t' | cut -f1 | tail -1" \
-            .format(freq_file, self.min_feat_count)).strip()
-    
-        log.info("building feature vector...")
-
-        log.info("selected feature set: {}".format(feat_set))
-        log.info("feature predicates: {}".format(', '.join(FEATURE_SETS[feat_set])))
-        log.info("total number of predicates: {}".format(len(FEATURE_SETS[feat_set])))
-    
-        regex = '^(' + '|'.join(FEATURE_SETS[feat_set]) + ')='
-        cmd.run("head -n {} {} | sed -r 's/ *[0-9]+ (.*)/\\1/' | grep -P '{}' > {}" \
-            .format(line_num, freq_file, regex, feat_file))
-
-        log.info("limit for features: {}".format(self.max_vec_size))
-        log.info("active features: {}".format(cmd.wc(feat_file)))
-    
-        feat_preds = cmd.run("cat {} | sed -r 's/(.*)=.*/\\1/' | sort -u" \
-            .format(feat_file)).strip().split("\n")
-
-        log.info("active feature predicates: {}".format(', '.join(feat_preds)))
-        log.info("total number of active predicates: {}".format(len(feat_preds)))
