@@ -29,7 +29,7 @@ def create_feat_file(freq_file, feat_set, feat_file,
     log.info("feature predicates: {}".format(', '.join(FEATURE_SETS[feat_set])))
     log.info("total number of predicates: {}".format(len(FEATURE_SETS[feat_set])))
 
-    regex = '^(' + '|'.join(FEATURE_SETS[feat_set]) + ')='
+    regex = '^(' + '|'.join(FEATURE_SETS[feat_set]) + ')(_[0-9]+)?='
     cmd.run("head -n {} {} | sed -r 's/ *[0-9]+ (.*)/\\1/' | grep -P '{}' > {}" \
         .format(line_num, freq_file, regex, feat_file))
 

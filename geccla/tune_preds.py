@@ -12,7 +12,7 @@ def main():
     result = run_grid_search(
                  args.confusion_set, args.format,
                  args.cnfs_file, args.pred_file, args.grid_file,
-                 args.steps)
+                 (args.thr_steps, args.dif_steps))
 
     print "\t".join(map(str, result))
 
@@ -31,8 +31,10 @@ def parse_user_arguments():
         help="prediction data format")
 
     eval = parser.add_argument_group("evaluation arguments")
-    eval.add_argument('-s', '--steps', type=int, default=5,
-        help="number of steps for threshold and difference")
+    eval.add_argument('--thr-steps', type=int, default=20,
+        help="number of steps for threshold")
+    eval.add_argument('--dif-steps', type=int, default=1,
+        help="number of steps for difference")
 
     parser.add_argument('-g', '--grid-file', type=str,
         help="file to store grid search table")

@@ -20,7 +20,7 @@ import config
 def run_m2_grid_search(conf_set, format, 
                        text_file, cnfs_file, pred_file, m2_file,
                        grid_file=None, work_dir=None,
-                       num_of_steps=10):
+                       steps=(10,1)):
 
     if not work_dir:
         work_dir = os.getpid()
@@ -32,8 +32,7 @@ def run_m2_grid_search(conf_set, format,
 
     preds = parse_pred_file(pred_file, format, conf_set)
     minmax_params = find_minmax_params(preds)
-
-    generator = grid_search_generator(minmax_params, num_of_steps, grid_file)
+    generator = grid_search_generator(minmax_params, steps, grid_file)
     
     while True:
         thrdif = generator.next()

@@ -15,7 +15,7 @@ def main():
                  args.input_file, args.cnfs_file, args.pred_file, 
                  args.m2_file,
                  args.grid_file, args.work_dir,
-                 args.steps)
+                 (args.thr_steps, args.dif_steps))
     print "\t".join(map(str, result))
 
 
@@ -40,8 +40,10 @@ def parse_user_arguments():
         #help="source side of M^2 file with original tokenization and casing")
 
     eval = parser.add_argument_group("evaluation arguments")
-    eval.add_argument('-s', '--steps', type=int, default=10,
-        help="number of steps for threshold and difference")
+    eval.add_argument('--thr-steps', type=int, default=20,
+        help="number of steps for threshold")
+    eval.add_argument('--dif-steps', type=int, default=1,
+        help="number of steps for difference")
 
     parser.add_argument('-g', '--grid-file', type=str,
         help="file to store grid search table")

@@ -18,35 +18,30 @@ PRECISION = 5
 
 def run_grid_search(conf_set, format, 
                     cnfs_file, pred_file, grid_file=None,
-                    num_of_steps=10):
+                    steps=(10,5)):
     
     preds = parse_pred_file(pred_file, format, conf_set)
     minmax_params = find_minmax_params(preds)
-
-    generator = grid_search_generator(minmax_params, num_of_steps, grid_file)
-    thrdif = None
+    generator = grid_search_generator(minmax_params, steps, grid_file)
 
     while True:
         thrdif = generator.next()
         if not thrdif or len(thrdif) == 3:
             break
-
         prec, rec, fscore =  evaluate(cnfs_file, preds, *thrdif)
         generator.send( (prec, rec, fscore) )
 
-    if thrdif and len(thrdif) == 3:
-        return thrdif
     return generator.next()
 
 def grid_search_generator(min_max_params=(0.0, 1.0, 0.0, 1.0), 
-                          num_of_steps=10,
+                          steps=(10,5),
                           grid_file=None):
 
     if grid_file:
         grid_io = open(grid_file, 'w+')
         grid_io.write("# thr\tdif\tP\tR\tF0.5\n")
 
-    param_sets = calculate_param_sets(min_max_params, num_of_steps)
+    param_sets = calculate_param_sets(min_max_params, steps)
     results = {}
     response = None
 
@@ -95,16 +90,17 @@ def __format_grid_line(thr, dif, prec=None, rec=None, fscore=None):
     return "t={thr:.4f}\td={dif:.4f}\tP={prec:.4f}\tR={rec:.4f}\tF0.5={fscore:.4f}" \
         .format(thr=thr, dif=dif, prec=prec, rec=rec, fscore=fscore)
 
-def calculate_param_sets(min_max_params=(0.0, 1.0, 0.0, 1.0), num_of_steps=10):
+def calculate_param_sets(minmax_params=(0.0, 1.0, 0.0, 1.0), 
+                         num_of_steps=(10,5)):
     log.info("number of steps: {}".format(num_of_steps))
 
-    min_thr, max_thr, min_dif, max_dif = min_max_params
+    min_thr, max_thr, min_dif, max_dif = minmax_params
     
     log.info("min/max threshold: {}/{}".format(min_thr, max_thr))
     log.info("min/max difference: {}/{}".format(min_dif, max_dif))
 
-    thr_step = (max_thr - min_thr) / float(num_of_steps)
-    dif_step = (max_dif - min_dif) / float(num_of_steps)
+    thr_step = (max_thr - min_thr) / float(num_of_steps[0])
+    dif_step = (max_dif - min_dif) / float(num_of_steps[1])
 
     log.info("threshold step: {}".format(thr_step))
     log.info("difference step: {}".format(dif_step))
@@ -118,8 +114,8 @@ def calculate_param_sets(min_max_params=(0.0, 1.0, 0.0, 1.0), num_of_steps=10):
     return itertools.product(thrs, difs)
 
 def find_minmax_params(predictions):
-    min_thr, max_thr = 100.0, -100.0
-    min_dif, max_dif = 100.0, -100.0
+    min_thr, max_thr = None, None
+    min_dif, max_dif = None, None
 
     for answers in predictions:
         values = sorted([round(val, PRECISION) for val in answers.values()])
