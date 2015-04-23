@@ -8,6 +8,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../g
 
 from classification import ALGORITHMS
 from classification import algorithm_to_format
+from classification import NON_TUNNED_ALGORITHMS
+
 from confusion_set import ConfusionSet
 
 import cmd
@@ -193,7 +195,7 @@ def extract_features(filepath, options=''):
         .format(root=config.ROOT_DIR, opts=options, fp=filepath))
 
 def print_confusion_statistics(filepath):
-    stats = cmd.run("{root}/manage_confs.py -c {cs} {fp}.cnfs" \
+    stats = cmd.run("{root}/manage_confs.py {fp}.cnfs" \
         .format(root=config.ROOT_DIR, cs=CONFUSION_SET, fp=filepath))
     log.info("training data statistics:\n{}".format(stats))
 
@@ -388,6 +390,10 @@ def parse_user_arguments():
         args = load_setting_file(args)
 
     if args.tune:
+        if args.algorithm in NON_TUNNED_ALGORITHMS:
+            raise ArgumentError("algorithm {} can not be tunned!" \
+                .format(args.algorithm))
+
         assert_file_exists(args.tune)
         if not args.eval:
             raise ArgumentError("argument --tune requires --eval")

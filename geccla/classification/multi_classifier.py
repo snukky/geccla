@@ -10,9 +10,11 @@ import config
 from confusion_set import ConfusionSet
 from logger import log
 
+from classification.naive_classifiers import MajorityClassClassifier
+from classification.naive_classifiers import PerfectClassifier
+
 
 class MultiClassifier():
-
     def __init__(self, conf_set):
         self.confusion_set = ConfusionSet(conf_set)
         self.num_classes = self.confusion_set.size()
@@ -53,6 +55,14 @@ class MultiClassifier():
                         data=data_file, model=model_file, pred=pred_file, 
                         opts=options))
 
+        elif 'majority' == algorithm:
+            MajorityClassClassifier(self.confusion_set) \
+                .predict(model_file, data_file, pred_file)
+
+        elif 'perfect' == algorithm:
+            PerfectClassifier(self.confusion_set) \
+                .predict(model_file, data_file, pred_file)
+
         else:
             log.error("not supported algorithm: {}".format(algorithm))
 
@@ -88,6 +98,12 @@ class MultiClassifier():
                 .format(bin=config.CLASSIFIERS.MAXENT_BIN, 
                         data=data_file, model=model_file,
                         opts=options))
+
+        elif 'majority' == algorithm:
+            MajorityClassClassifier(self.confusion_set).train(model_file, data_file)
+
+        elif 'perfect' == algorithm:
+            PerfectClassifier(self.confusion_set).train(model_file, data_file)
 
         else:
             log.error("not supported algorithm: {}".format(algorithm))

@@ -14,3 +14,5 @@ FORMATS = list(set(ALGORITHMS_AND_FORMATS.values()))
 
 def algorithm_to_format(algorithm):
     return ALGORITHMS_AND_FORMATS[algorithm]
+
+NON_TUNNED_ALGORITHMS = ['majority', 'prefect']
