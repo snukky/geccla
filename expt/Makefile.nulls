@@ -1,54 +1,86 @@
 include Makefile.data
 
-LEVELS = tok pos awc tok,pos tok,awc tok,pos,awc
+LEVELS = tok pos awc pos,awc
+CS_ARTORDET = a,an,the,
 
 
-# evaluation after training on NUCLE
-test2013.nucle.artordet.*.eval: test2013.artordet.*.cnfs test2013.nucle.*.cnfs
-	rm -f $@
-	for num in 1 2 3; do \
-		for level in $(LEVELS) ; do \
-			python $(GECCLA_DIR)/scripts/eval_cnfs.py test2013.nucle.$$level.cnfs test2013.artordet.$$num.cnfs >> test2013.nucle.artordet.$$num.eval ; \
-		done \
-	done
+all: test2013.*.eval nucle.*.eval
 
-test2013.nucle.*.cnfs: test2013.err nucle.ngrams.*
-	for level in $(LEVELS) ; do \
-		python $(GECCLA_DIR)/geccla/find_confs.py -c a,an,the, -l $$level -n nucle.ngrams $(word 1,$^) > test2013.nucle.$$level.cnfs ; \
-	done
+test2013.*.eval: test2013.artordet.eval test2013.nucle.eval test2013.lang8.eval
+
+nucle.*.eval: nucle.artordet.eval nucle.lang8.eval
 
 # evaluation after training on Lang8
-test2013.lang8.artordet.*.eval: test2013.artordet.*.cnfs test2013.lang8.*.cnfs
+test2013.lang8.eval: test2013.gold.cnfs test2013.lang8.*.cnfs
 	rm -f $@
-	for num in 1 2 3; do \
-		for level in $(LEVELS) ; do \
-			python $(GECCLA_DIR)/scripts/eval_cnfs.py test2013.lang8.$$level.cnfs test2013.artordet.$$num.cnfs >> test2013.lang8.artordet.$$num.eval ; \
-		done \
+	for level in $(LEVELS) ; do \
+		python $(GECCLA_DIR)/scripts/eval_cnfs.py test2013.lang8.$$level.cnfs $(word 1,$^) >> $@ ; \
 	done
-
 test2013.lang8.*.cnfs: test2013.err lang8.ngrams.*
 	for level in $(LEVELS) ; do \
-		python $(GECCLA_DIR)/geccla/find_confs.py -c a,an,the, -l $$level -n lang8.ngrams $(word 1,$^) > test2013.lang8.$$level.cnfs ; \
+		python $(GECCLA_DIR)/geccla/find_confs.py -c $(CS_ARTORDET) -l $$level -n lang8.ngrams $(word 1,$^) > test2013.lang8.$$level.cnfs ; \
 	done
 
+nucle.lang8.eval: nucle.gold.cnfs nucle.lang8.*.cnfs
+	rm -f $@
+	for level in $(LEVELS) ; do \
+		python $(GECCLA_DIR)/scripts/eval_cnfs.py nucle.lang8.$$level.cnfs $(word 1,$^) >> $@ ; \
+	done
+nucle.lang8.*.cnfs: nucle.err lang8.ngrams.*
+	for level in $(LEVELS) ; do \
+		python $(GECCLA_DIR)/geccla/find_confs.py -c $(CS_ARTORDET) -l $$level -n lang8.ngrams $(word 1,$^) > nucle.lang8.$$level.cnfs ; \
+	done
 
-# gold standard
+# evaluation after training on NUCLE
+test2013.nucle.eval: test2013.gold.cnfs test2013.nucle.*.cnfs
+	rm -f $@
+	for level in $(LEVELS) ; do \
+		python $(GECCLA_DIR)/scripts/eval_cnfs.py test2013.nucle.$$level.cnfs $(word 1,$^) >> $@ ; \
+	done
+test2013.nucle.*.cnfs: test2013.err nucle.ngrams.*
+	for level in $(LEVELS) ; do \
+		python $(GECCLA_DIR)/geccla/find_confs.py -c $(CS_ARTORDET) -l $$level -n nucle.ngrams $(word 1,$^) > test2013.nucle.$$level.cnfs ; \
+	done
+
+# evaluation of heuristic method
+test2013.artordet.eval: test2013.gold.cnfs test2013.artordet.*.cnfs
+	rm -f $@
+	for level in 1 2 3 ; do \
+		python $(GECCLA_DIR)/scripts/eval_cnfs.py test2013.artordet.$$level.cnfs $(word 1,$^) >> $@ ; \
+	done
 test2013.artordet.*.cnfs: test2013.err
 	for num in 1 2 3 ; do \
-		python $(GECCLA_DIR)/geccla/find_confs.py --artordet -l $$num $? > test2013.artordet.$$num.cnfs ; \
+		python $(GECCLA_DIR)/geccla/find_confs.py --artordet -l $$num $^ > test2013.artordet.$$num.cnfs ; \
 	done
+
+nucle.artordet.eval: nucle.gold.cnfs nucle.artordet.*.cnfs
+	rm -f $@
+	for level in 1 2 3 ; do \
+		python $(GECCLA_DIR)/scripts/eval_cnfs.py nucle.artordet.$$level.cnfs $(word 1,$^) >> $@ ; \
+	done
+nucle.artordet.*.cnfs: nucle.err
+	for num in 1 2 3 ; do \
+		python $(GECCLA_DIR)/geccla/find_confs.py --artordet -l $$num $^ > nucle.artordet.$$num.cnfs ; \
+	done
+
+# gold standards
+test2013.gold.cnfs: test2013.txt
+	python $(GECCLA_DIR)/geccla/find_confs.py -c $(CS_ARTORDET) $^ > $@
+
+nucle.gold.cnfs: nucle.txt
+	python $(GECCLA_DIR)/geccla/find_confs.py -c $(CS_ARTORDET) $^ > $@
 
 
 # NUCLE n-grams
 nucle.ngrams.*: nucle.txt
-	python $(GECCLA_DIR)/geccla/train_nulls.py -c a,an,the, -l tok,pos,awc -n nucle.ngrams $?
+	python $(GECCLA_DIR)/geccla/train_nulls.py -c $(CS_ARTORDET) -l tok,pos,awc -n nucle.ngrams $?
 
 # Lang8 n-grams
 lang8.ngrams.*: lang8.err
-	python $(GECCLA_DIR)/geccla/train_nulls.py -c a,an,the, -l tok,pos,awc -n lang8.ngrams $?
+	python $(GECCLA_DIR)/geccla/train_nulls.py -c $(CS_ARTORDET) -l tok,pos,awc -n lang8.ngrams $?
 
 
 clean: 
-	rm -f test2013.*.cnfs nucle.ngrams.* nucle.txt.* test2013.err.* *.eval
+	rm -f test2013.*.cnfs nucle.*.cnfs nucle.ngrams.* lang8.ngrams.* nucle.txt.* lang8.txt.* *.eval
 
 .PHONY: clean

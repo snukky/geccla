@@ -8,48 +8,58 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../g
 from confusions import parse_conf_line
 from evaluation import metrics
 
+from logger import log
 
-def evaluate_cnfs_coverage(cnfs_file, gold_cnfs_file):
-    values = []
+
+def evaluate_nulls_coverage(cnfs_file, gold_cnfs_file):
+    system_confs = {}
     with open(cnfs_file) as cnfs_io:
         for i, line in enumerate(cnfs_io):
-            n, i, j, _, _, _ = parse_conf_line(line)
-            values.append("{}_{}_{}".format(n, i, j))
-    system_values = set(values)
+            n, i, j, err, _, _ = parse_conf_line(line)
+            system_confs["{}_{}_{}".format(n, i, j)] = err == '<null>'
+    system_values = set(system_confs.keys())
 
-    values = []
+    gold_confs = {}
     with open(gold_cnfs_file) as gold_cnfs_io:
         for i, line in enumerate(gold_cnfs_io):
-            n, i, j, _, _, _ = parse_conf_line(line)
-            values.append("{}_{}_{}".format(n, i, j))
-    gold_values = set(values)
+            n, i, j, err, _, _ = parse_conf_line(line)
+            gold_confs["{}_{}_{}".format(n, i, j)] = err == '<null>'
+    gold_values = set(gold_confs.keys())
     
     tp, fp, tn, fn = 0, 0, 0, 0
 
     for val in gold_values.union(system_values):
         if val in gold_values:
             if val in system_values:
-                tp += 1
+                if gold_confs[val] and system_confs[val]:
+                    tp += 1
+                elif not gold_confs[val] and not system_confs[val]:
+                    tn += 1
+                else:
+                    log.warn("not handled case!")
             else:
                 fn += 1
         else:
-            if val in system_values:
+            if system_confs[val] == True:
                 fp += 1
             else:
-                tn += 1
-    
-    return (metrics.precision(tp, tn, fp, fn),
-            metrics.recall(tp, tn, fp, fn),
-            metrics.fscore(tp, tn, fp, fn, 1.0))
+                log.warn("not handled case!")
+
+    return (tp, tn, fp, fn)
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
         print "usage: {} system.cnfs gold.cnfs".format(sys.argv[0])
         exit()
 
-    prec, rec, fscore = evaluate_cnfs_coverage(sys.argv[1], sys.argv[2])
+    tp, tn, fp, fn = evaluate_nulls_coverage(sys.argv[1], sys.argv[2])
+
+    prec = metrics.precision(tp, tn, fp, fn)
+    rec = metrics.recall(tp, tn, fp, fn)
+    fscore = metrics.fscore(tp, tn, fp, fn, 1.0)
 
     print "# evaluation {} according to {}".format(sys.argv[1], sys.argv[2])
+    print "TP/TN/FP/FN : %d/%d/%d/%d" % (tp, tn, fp, fn)
     print "Precision   : %.4f" % prec
     print "Recall      : %.4f" % rec
     print "F1.0        : %.4f" % fscore
