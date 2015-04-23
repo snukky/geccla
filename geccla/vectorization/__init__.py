@@ -12,7 +12,7 @@ from logger import log
 def create_freq_file(cnfs_file, freq_file):
     log.info("counting frequencies...")
     cmd.run("cat {} | sed 's/|||/\\t/g' | cut -f5 | tr ' ' '\\n' "
-        "| sort | uniq -c | sort -nr > {}".format(cnfs_file, freq_file))
+        "| sort -S 1G --parallel 8 | uniq -c | sort -nr -S 1G --parallel 8 > {}".format(cnfs_file, freq_file))
 
 def create_feat_file(freq_file, feat_set, feat_file, 
                      min_feat_count=5, max_vec_size=500000):
@@ -36,7 +36,7 @@ def create_feat_file(freq_file, feat_set, feat_file,
     log.info("limit for features: {}".format(max_vec_size))
     log.info("active features: {}".format(cmd.wc(feat_file)))
 
-    feat_preds = cmd.run("cat {} | sed -r 's/(.*)=.*/\\1/' | sort -u" \
+    feat_preds = cmd.run("cat {} | sed -r 's/(.*)=.*/\\1/' | sort -u -S 1G --parallel 8" \
         .format(feat_file)).strip().split("\n")
 
     log.info("active feature predicates: {}".format(', '.join(feat_preds)))

@@ -20,7 +20,8 @@ import config
 def run_m2_grid_search(conf_set, format, 
                        text_file, cnfs_file, pred_file, m2_file,
                        grid_file=None, work_dir=None,
-                       steps=(10,1)):
+                       steps=(10,1),
+                       deep=True):
 
     if not work_dir:
         work_dir = os.getpid()
@@ -32,11 +33,11 @@ def run_m2_grid_search(conf_set, format,
 
     preds = parse_pred_file(pred_file, format, conf_set)
     minmax_params = find_minmax_params(preds)
-    generator = grid_search_generator(minmax_params, steps, grid_file)
+    generator = grid_search_generator(minmax_params, steps, grid_file, deep)
     
     while True:
         thrdif = generator.next()
-        if not thrdif:
+        if not thrdif or len(thrdif) == 3:
             break
 
         thr, dif = thrdif
@@ -47,7 +48,23 @@ def run_m2_grid_search(conf_set, format,
                            thr, dif, out_file)
         cmd.wdiff(err_file, out_file)
 
-        prec, rec, fscore =  evaluate_m2(out_file, m2_file)
+        prec, rec, fscore = evaluate_m2(out_file, m2_file)
+        generator.send( (prec, rec, fscore) )
+
+    while deep:
+        thrdif = generator.next()
+        if not thrdif or len(thrdif) == 3:
+            break
+
+        thr, dif = thrdif
+        out_file = os.path.join(work_dir, "output.{0:.4f}-{1:.4f}.txt".format(thr, dif))
+
+        inject_predictions(conf_set, format, 
+                           text_file, cnfs_file, pred_file, 
+                           thr, dif, out_file)
+        cmd.wdiff(err_file, out_file)
+
+        prec, rec, fscore = evaluate_m2(out_file, m2_file)
         generator.send( (prec, rec, fscore) )
 
     return generator.next()

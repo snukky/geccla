@@ -12,7 +12,8 @@ def main():
     result = run_grid_search(
                  args.confusion_set, args.format,
                  args.cnfs_file, args.pred_file, args.grid_file,
-                 (args.thr_steps, args.dif_steps))
+                 (args.thr_steps, args.dif_steps),
+                 args.no_deep)
 
     print "\t".join(map(str, result))
 
@@ -35,6 +36,8 @@ def parse_user_arguments():
         help="number of steps for threshold")
     eval.add_argument('--dif-steps', type=int, default=1,
         help="number of steps for difference")
+    eval.add_argument('--no-deep', action='store_false',
+        help="do not run grid search twice")
 
     parser.add_argument('-g', '--grid-file', type=str,
         help="file to store grid search table")

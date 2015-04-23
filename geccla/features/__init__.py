@@ -112,6 +112,7 @@ sum_feature_sets('genall', 'tok pos awc')
 sum_feature_sets('genpos', 'tok pos')
 sum_feature_sets('gentok', 'tok awc')
 
+sum_feature_sets('base', 'tok pos awc')
 sum_feature_sets('all', 'tok pos awc mixtokpos mixtokawc')
 
 compose_feature_set('wordsBeforeNP', 'wB', 'NP1')
