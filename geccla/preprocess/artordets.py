@@ -19,7 +19,15 @@ def normalize_indef_articles(text_file, nrm_file):
     nrm_io.close()
     return nrm_file
 
-def restore_indef_articles(sent):
+def restore_indef_articles(input_file, output_file):
+    output_io = open(output_file, 'w+')
+    with open(input_file) as input_io:
+        for line in input_io:
+            output_io.write(restore_indef_articles_in_sentence(line.strip()))
+    output_io.close()
+    return output_file
+
+def restore_indef_articles_in_sentence(sent):
     words = sent.split()
 
     if len(words) < 2:

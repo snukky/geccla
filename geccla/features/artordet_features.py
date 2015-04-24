@@ -3,6 +3,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 
+from features import FEATURE_SETS
 from features import sum_feature_sets, compose_feature_set
 from confusions import iterate_text_and_confs
 
@@ -35,22 +36,30 @@ class ArtOrDetFeatures():
             .format(input_file, feat_set))
 
         all_chunks = self.chunker.chunks_and_pos_tags(input_file)
+        warns = 0
 
         for s, cnfs, text in iterate_text_and_confs(input_file, cnfs_file):
             tokens = text.strip().lower().split()
             chunks = all_chunks.next()
 
+            words = [w.lower() for w in chunks.words]
+            if len(words) != len(tokens):
+                log.warn("chunker could change tokenization:\nwords : {}\nchunks: {}" \
+                    .format(' '.join(tokens), ' '.join(words)))
+                warns += 1
+
             for i, j, err, cor, _ in cnfs:
-                features = self.extract_features_for_example(i, j, err, tokens, chunks)
+                features = self.extract_features_for_example(i, j, err, tokens, chunks, words)
                 yield (s, i, j, err, cor, features)
 
-    def extract_features_for_example(self, i, j, word, tokens, chunks):
-        words = [w.lower() for w in chunks.words]
-        poses = chunks.pos
+        if warns > 0:
+             log.warn("number of sentences with changed tokenization: {}" \
+                .format(warns))
 
-        if len(words) != len(tokens):
-            log.warn("chunker could change tokenization:\nwords : {}\nchunks: {}" \
-                .format(' '.join(tokens), ' '.join(words)))
+    def extract_features_for_example(self, i, j, word, tokens, chunks, words=None):
+        if words is None:
+            words = [w.lower() for w in chunks.words]
+        poses = chunks.pos
 
         features = {}
 
@@ -153,9 +162,10 @@ class ArtOrDetFeatures():
                 features['adj&NC'] = features['adj']+' '+features['NC']
                 features['adjTag&NC'] = features['adj']+' '+features['NC']
         
-        if 'npWords' in features and 'NC' in features: 
+        if 'npWords' in features:
             features['npTags&headWord'] = features['npTags']+' '+headWord 
-            features['npTags&NC'] = features['npTags']+' '+features['NC']
+            if 'NC' in features: 
+                features['npTags&NC'] = features['npTags']+' '+features['NC']
 
         # NP2 fatures
         features['headWord&headPOS'] = headWord + ' ' + headPOS
@@ -168,9 +178,9 @@ class ArtOrDetFeatures():
             features['headWord&wordAfterNP'] = headWord + ' ' + words_after_NP[0]
             features['headWord&2wordsAfterNP'] = features['headWord&wordAfterNP'] + ' ' + words_after_NP[1]
             features['headWord&3wordsAfterNP'] = features['headWord&2wordsAfterNP'] + ' ' + words_after_NP[2]
-            features['npWords&1wordAfterNP'] = features['npWords'] + ' ' + words_after_NP[0]
-            features['npWords&22wordsAfterNP'] = features['npWords&1wordAfterNP'] + ' ' + words_after_NP[1]
-            features['npWords&33wordsAfterNP'] = features['npWords&22wordsAfterNP'] + ' ' + words_after_NP[2]
+            features['npWords&wordAfterNP'] = features['npWords'] + ' ' + words_after_NP[0]
+            features['npWords&2wordsAfterNP'] = features['npWords&wordAfterNP'] + ' ' + words_after_NP[1]
+            features['npWords&3wordsAfterNP'] = features['npWords&2wordsAfterNP'] + ' ' + words_after_NP[2]
 
         # verb features
         if is_adv(pB) and is_verb(p2B):
@@ -179,7 +189,7 @@ class ArtOrDetFeatures():
             features['verb'] = wB
 
         if 'verb' in features:
-            for feat in ARTORDET_FEATURE_SETS['NP1']:
+            for feat in FEATURE_SETS['NP1']:
                 if feat in features:
                     features['verb&' + feat] = features['verb'] + ' ' + features[feat]
 
@@ -199,13 +209,13 @@ class ArtOrDetFeatures():
                 features['prep'] = w2B
 
         if 'prep' in features:
-            for feat in ARTORDET_FEATURE_SETS['NP1']:
+            for feat in FEATURE_SETS['NP1']:
                 if feat in features:
                     features['prep&' + feat] = features['prep'] + ' ' + features[feat]
 
         # features with word before NP
         if 'verbObj' not in features and 'prepBefore' not in features:
-            for feat in ARTORDET_FEATURE_SETS['NP1']:
+            for feat in FEATURE_SETS['NP1']:
                 if feat in features:
                     features['wB&' + feat] = wB + ' ' + features[feat]
         

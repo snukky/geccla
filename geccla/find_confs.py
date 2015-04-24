@@ -63,7 +63,7 @@ def parse_user_arguments():
                 .format(', '.join(NullFinder.LEVELS)))
 
     if args.artordet:
-        args.confusion_set = 'a,an,the,'
+        args.confusion_set = 'a,the,'
         if not args.levels:
             args.levels = 2
         args.levels = int(args.levels)

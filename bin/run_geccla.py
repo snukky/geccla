@@ -3,6 +3,7 @@
 import os
 import sys
 import argparse
+import shutil
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../geccla')))
 
@@ -11,6 +12,9 @@ from classification import algorithm_to_format
 from classification import NON_TUNNED_ALGORITHMS
 
 from confusion_set import ConfusionSet
+
+from preprocess.artordets import normalize_indef_articles
+from preprocess.artordets import restore_indef_articles
 
 import cmd
 import config
@@ -40,9 +44,12 @@ def main():
         log.info("TRAINING ON FILE: {}".format(args.train))
         train_file = cmd.base_filepath(args.work_dir, args.train)
         
+        #if args.artordet:
+            #normalize_indef_articles(args.train, train_file + '.txt')
+        #else:
         cmd.ln(args.train, train_file + '.txt')
 
-        if null_in_confset() and "-n " not in args.cnf_opts:
+        if null_in_confset() and "-n " not in args.cnf_opts and not args.artordet:
             train_nulls(train_file)
             args.cnf_opts += " -n {}.ngrams".format(train_file)
 
@@ -66,6 +73,9 @@ def main():
                 make_m2_parallel(run_file)
             else:
                 cmd.ln(run, run_file + '.txt')
+            #if args.artordets:
+                #shutil.move(run_file + '.txt', run_file + '.txt.nonrm')
+                #normalize_indef_articles(run_file + '.txt.nonrm', run_file + '.txt')
 
             find_confusions(args.cnf_opts, run_file, parallel=args.eval)
             extract_features(run_file, args.ext_opts)
@@ -75,6 +85,9 @@ def main():
             run_classifier(args.model, args.cls_opts, run_file)
 
             inject_predictions(args.evl_opts, run_file)
+            #if args.artordet:
+                #shutil.move(run_file + '.out', run_file + '.out.nrm')
+                #restore_indef_articles(run_file + '.out.nrm', run_file + '.out')
 
             if args.eval:
                 log.info("EVALUATING FILE: {}".format(run))
@@ -101,6 +114,9 @@ def main():
         run_classifier(args.model, args.cls_opts, tune_file)
 
         inject_predictions('', tune_file)
+        #if args.artordet:
+            #shutil.move(tune_file + '.out', tune_file + '.out.nrm')
+            #restore_indef_articles(tune_file + '.out.nrm', tune_file + '.out')
          
         log.info("GRID SEARCHING ON FILE: {}".format(args.tune))
 
@@ -123,6 +139,9 @@ def main():
 
             cmd.ln(run_file + '.in', run_file + '.best.in')
             inject_predictions(new_evl_opts, run_file + '.best')
+            #if args.artordet:
+                #shutil.move(run_file + '.best.out', run_file + '.best.out.nrm')
+                #restore_indef_articles(run_file + '.best.out.nrm', run_file + '.best.out')
 
             if args.m2:
                 cmd.ln(run_file + '.m2', run_file + '.best.m2')
@@ -152,6 +171,9 @@ def train_nulls(filepath):
 def find_confusions(options, filepath, parallel=False, confset=None):
     log.info("finding confusion examples from file: {}.txt".format(filepath))
 
+    if not options:
+        options = " --levels pos,tok,awc"
+
     if result_is_ready('{}.cnfs.empty'.format(filepath)):
         return
 
@@ -176,7 +198,7 @@ def find_confusions(options, filepath, parallel=False, confset=None):
     if null_in_confset() and "-n " not in options:
         options += " -n {}.ngrams".format(filepath) 
 
-    cmd.run("{root}/find_confs.py -c {cs} -l tok,pos,awc {opts} {err_file} > {fp}.cnfs.empty" \
+    cmd.run("{root}/find_confs.py -c {cs} {opts} {err_file} > {fp}.cnfs.empty" \
         .format(root=config.ROOT_DIR, cs=CONFUSION_SET, 
                 opts=options, err_file=err_file, fp=filepath))
 
@@ -352,6 +374,8 @@ def parse_user_arguments():
         help="classifier model")
     base.add_argument("-d", "--work-dir", default=str(os.getpid()), type=str, 
         help="working directory")
+    base.add_argument("--artordet", action='store_true',
+        help="heuristic article and determiner errors correction")
 
     parser.add_argument("-t", "--train", type=str, 
         help="train classifier on parallel texts")
@@ -402,6 +426,14 @@ def parse_user_arguments():
         raise ArgumentError("argument --eval requires --run")
     if args.m2 and not args.run:
         raise ArgumentError("argument --m2 requires --run")
+
+    if args.artordet:
+        args.confusion_set = 'a,the,'
+        args.cnf_opts = ' --artordet --levels 2'
+        if '--artordet' not in args.ext_opts:
+            args.ext_opts += ' --artordet'
+        if not args.vec_opts:
+            args.vec_opts = ' -s roz'
 
     log.debug(args)
     return args

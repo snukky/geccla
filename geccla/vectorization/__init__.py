@@ -24,10 +24,12 @@ def create_feat_file(freq_file, feat_set, feat_file,
         .format(freq_file, min_feat_count)).strip()
 
     log.info("building feature vector...")
-
     log.info("selected feature set: {}".format(feat_set))
-    log.info("feature predicates: {}".format(', '.join(FEATURE_SETS[feat_set])))
-    log.info("total number of predicates: {}".format(len(FEATURE_SETS[feat_set])))
+
+    all_feat_preds = FEATURE_SETS[feat_set]
+
+    log.info("feature predicates in selected feature set: {}".format(', '.join(all_feat_preds)))
+    log.info("total number of predicates in feature set: {}".format(len(all_feat_preds)))
 
     regex = '^(' + '|'.join(FEATURE_SETS[feat_set]) + ')(_[0-9]+)?='
     cmd.run("head -n {} {} | sed -r 's/ *[0-9]+ (.*)/\\1/' | grep -P '{}' > {}" \
@@ -41,6 +43,23 @@ def create_feat_file(freq_file, feat_set, feat_file,
 
     log.info("active feature predicates: {}".format(', '.join(feat_preds)))
     log.info("total number of active predicates: {}".format(len(feat_preds)))
+
+    miss_feat_preds = [fp for fp in all_feat_preds if fp not in feat_preds]
+
+    log.info("nonactive feature predicates: {}".format(', '.join(miss_feat_preds)))
+    log.info("total number of nonactive predicates: {}".format(len(miss_feat_preds)))
+
+    cmd.run("head -n {} {} | sed -r 's/ *[0-9]+ (.*)/\\1/' | grep -vP '{}' " \
+        " | sed -r 's/(.*)=.*/\\1/' | sort -u -S 1G --parallel 8 > {}" \
+        .format(line_num, freq_file, regex, feat_file + '.skip'))
+
+    skip_feat_preds = []
+    with open(feat_file + '.skip') as skip_io:
+        skip_feat_preds = [line.strip() for line in skip_io.readlines()]
+
+    log.info("skipped feature predicates: {}".format(', '.join(skip_feat_preds)))
+    log.info("total number of skipped predicates: {}".format(len(skip_feat_preds)))
+
 
 def strong_evidence(conf_set, cnfs_file, freq_file, evid_file):
     freq_io = open(freq_file)
