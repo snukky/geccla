@@ -68,6 +68,9 @@ def parse_user_arguments():
             args.levels = 2
         args.levels = int(args.levels)
 
+    if not args.levels:
+        args.levels = 'tok pos awc'.split()
+
     return args
 
 

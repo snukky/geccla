@@ -91,7 +91,7 @@ class FeatureExtractor():
 
                         name = name_prefix + '_' + ''.join(map(str, idxes))
                         ngram = [_tags[k] if k in idxes else _toks[k] 
-                                 for k in xrange(n-1)]
+                                 for k in xrange(len(_toks))]
                         ngrams[name] = '_'.join(ngram)
 
                         #log.debug("    {} = {}".format(subname, ' '.join(ngram)))
