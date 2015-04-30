@@ -11,6 +11,8 @@ from classification import ALGORITHMS
 from classification import algorithm_to_format
 from classification import NON_TUNNED_ALGORITHMS
 
+from features import FEATURE_SETS
+
 from confusion_set import ConfusionSet
 
 from preprocess.artordets import normalize_indef_articles
@@ -49,9 +51,11 @@ def main():
         #else:
         cmd.ln(args.train, train_file + '.txt')
 
-        if null_in_confset() and "-n " not in args.cnf_opts and not args.artordet:
-            train_nulls(train_file)
-            args.cnf_opts += " -n {}.ngrams".format(train_file)
+        if args.ngrams:
+            args.cnf_opts += " -n {}".format(args.ngrams)
+        #elif null_in_confset():
+            #train_nulls(train_file)
+            #args.cnf_opts += " -n {}.ngrams".format(train_file)
 
         find_confusions(args.cnf_opts, train_file, parallel=True)
         extract_features(train_file, args.ext_opts)
@@ -194,9 +198,6 @@ def find_confusions(options, filepath, parallel=False, confset=None):
             err_file = input_file
     else:
         cmd.ln(input_file, err_file)
-
-    if null_in_confset() and "-n " not in options:
-        options += " -n {}.ngrams".format(filepath) 
 
     cmd.run("{root}/find_confs.py -c {cs} {opts} {err_file} > {fp}.cnfs.empty" \
         .format(root=config.ROOT_DIR, cs=CONFUSION_SET, 
@@ -374,7 +375,13 @@ def parse_user_arguments():
         help="classifier model")
     base.add_argument("-d", "--work-dir", default=str(os.getpid()), type=str, 
         help="working directory")
-    base.add_argument("--artordet", action='store_true',
+
+    extra = parser.add_argument_group("extra options")
+    extra.add_argument("--ngrams", type=str,
+        help="prefix of ngram lists for finding confusion examples")
+    extra.add_argument("--feature-set", type=str, choices=FEATURE_SETS.keys(),
+        help="feature set")
+    extra.add_argument("--artordet", action='store_true',
         help="heuristic article and determiner errors correction")
 
     parser.add_argument("-t", "--train", type=str, 
@@ -427,6 +434,10 @@ def parse_user_arguments():
     if args.m2 and not args.run:
         raise ArgumentError("argument --m2 requires --run")
 
+    if args.feature_set:
+        args.ext_opts += ' --feature-set {}'.format(args.feature_set)
+        args.vec_opts += ' --feature-set {}'.format(args.feature_set)
+
     if args.artordet:
         args.confusion_set = 'a,the,'
         args.cnf_opts = ' --artordet --levels 2'
@@ -434,6 +445,9 @@ def parse_user_arguments():
             args.ext_opts += ' --artordet'
         if not args.vec_opts:
             args.vec_opts = ' -s roz'
+
+    if args.artordet and args.ngrams:
+        raise ArgumentError("arguments --artordet and --ngrams are exclusive")
 
     log.debug(args)
     return args

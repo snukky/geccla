@@ -25,7 +25,7 @@ def main():
                                             args.ngrams_prefix,
                                             args.levels)
     else:
-        finder = BasicFinder(args.confusion_set)
+        finder = BasicFinder(args.confusion_set, not args.no_greedy)
         confs = finder.find_confusion_words(args.input_file)
 
     for conf in confs:
@@ -46,6 +46,8 @@ def parse_user_arguments():
         help="levels of n-grams extraction as comma-separated list "
              "(or numerical value when --artordet is active)")
 
+    parser.add_argument('--no-greedy', action='store_true',
+        help="do not add <null> examples if not in confusion set")
     parser.add_argument('--artordet', action='store_true',
         help="enable enhanced finding rules for articles and determiners")
     

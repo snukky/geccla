@@ -27,7 +27,7 @@ def parse_user_arguments():
     parser.add_argument('-v', '--feature-vector', 
         help="file with extracted features for feature vector")
     parser.add_argument('-s', '--feature-set', default='base',
-        help="set of predefined features")
+        help="predefined feature set")
     
     return parser.parse_args()
 

@@ -11,19 +11,32 @@ from evaluation import metrics
 from logger import log
 
 
+def evaluate_coverage(cnfs_file, gold_cnfs_file):
+    system_values = set(analyze_cnfs_file(cnfs_file).keys())
+    gold_values = set(analyze_cnfs_file(gold_cnfs_file).keys())
+    
+    tp, fp, tn, fn = 0, 0, 0, 0
+
+    for val in gold_values.union(system_values):
+        if val in gold_values:
+            if val in system_values:
+                tp += 1
+            else:
+                fn += 1
+        else:
+            if val in system_values:
+                fp += 1
+                print >> sys.stderr, val
+            else:
+                tn += 1
+
+    return (tp, tn, fp, fn)
+        
 def evaluate_nulls_coverage(cnfs_file, gold_cnfs_file):
-    system_confs = {}
-    with open(cnfs_file) as cnfs_io:
-        for i, line in enumerate(cnfs_io):
-            n, i, j, err, _, _ = parse_conf_line(line)
-            system_confs["{}_{}_{}".format(n, i, j)] = err == '<null>'
+    system_confs = analyze_cnfs_file(cnfs_file)
     system_values = set(system_confs.keys())
 
-    gold_confs = {}
-    with open(gold_cnfs_file) as gold_cnfs_io:
-        for i, line in enumerate(gold_cnfs_io):
-            n, i, j, err, _, _ = parse_conf_line(line)
-            gold_confs["{}_{}_{}".format(n, i, j)] = err == '<null>'
+    gold_confs = analyze_cnfs_file(gold_cnfs_file)
     gold_values = set(gold_confs.keys())
     
     tp, fp, tn, fn = 0, 0, 0, 0
@@ -31,28 +44,39 @@ def evaluate_nulls_coverage(cnfs_file, gold_cnfs_file):
     for val in gold_values.union(system_values):
         if val in gold_values:
             if val in system_values:
-                if gold_confs[val] and system_confs[val]:
+                if gold_confs[val] == '<null>' and system_confs[val] == '<null>':
                     tp += 1
-                elif not gold_confs[val] and not system_confs[val]:
+                elif gold_confs[val] != '<null>' and system_confs[val] != '<null>':
                     tn += 1
                 else:
                     log.warn("not handled case!")
             else:
                 fn += 1
         else:
-            if system_confs[val] == True:
+            if system_confs[val] == '<null>':
                 fp += 1
             else:
                 log.warn("not handled case!")
 
     return (tp, tn, fp, fn)
 
+def analyze_cnfs_file(cnfs_file):
+    confs = {}
+    with open(cnfs_file) as cnfs_io:
+        for i, line in enumerate(cnfs_io):
+            n, i, j, err, _, _ = parse_conf_line(line)
+            confs["{}_{}_{}".format(n, i, j)] = err
+    return confs
+
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        print "usage: {} system.cnfs gold.cnfs".format(sys.argv[0])
+        print "usage: {} system.cnfs gold.cnfs [--null]".format(sys.argv[0])
         exit()
 
-    tp, tn, fp, fn = evaluate_nulls_coverage(sys.argv[1], sys.argv[2])
+    if len(sys.argv) > 3 and sys.argv[3] == '--null':
+        tp, tn, fp, fn = evaluate_nulls_coverage(sys.argv[1], sys.argv[2])
+    else:
+        tp, tn, fp, fn = evaluate_coverage(sys.argv[1], sys.argv[2])
 
     prec = metrics.precision(tp, tn, fp, fn)
     rec = metrics.recall(tp, tn, fp, fn)

@@ -46,31 +46,31 @@ FEATURE_SETS = {
         'wB5A0 wB4A1 wB3A2 wB2A3 wB1A4 wB0A5 '
         'wB4A0 wB3A1 wB2A2 wB1A3 wB0A4 '
         'wB3A0 wB2A1 wB1A2 wB0A3 '
-        'wB2A0 wB1A1 wB0A1 wB1A0 wB0A1'.split(),
+        'wB2A0 wB1A1 wB0A2 wB0A1 wB1A0 wB0A1'.split(),
 
     'pos':
         'pB5A0 pB4A1 pB3A2 pB2A3 pB1A4 pB0A5 '
         'pB4A0 pB3A1 pB2A2 pB1A3 pB0A4 '
         'pB3A0 pB2A1 pB1A2 pB0A3 '
-        'pB2A0 pB1A1 pB0A1 pB1A0 pB0A1'.split(),
+        'pB2A0 pB1A1 pB0A2 pB0A1 pB1A0 pB0A1'.split(),
 
     'awc':
         'cB5A0 cB4A1 cB3A2 cB2A3 cB1A4 cB0A5 '
         'cB4A0 cB3A1 cB2A2 cB1A3 cB0A4 '
         'cB3A0 cB2A1 cB1A2 cB0A3 '
-        'cB2A0 cB1A1 cB0A1 cB1A0 cB0A1'.split(),
+        'cB2A0 cB1A1 cB0A2 cB0A1 cB1A0 cB0A1'.split(),
 
     'mixtokpos':
         'mwpB5A0 mwpB4A1 mwpB3A2 mwpB2A3 mwpB1A4 mwpB0A5 '
         'mwpB4A0 mwpB3A1 mwpB2A2 mwpB1A3 mwpB0A4 '
         'mwpB3A0 mwpB2A1 mwpB1A2 mwpB0A3 '
-        'mwpB2A0 mwpB1A1 mwpB0A1 mwpB1A0 mwpB0A1'.split(),
+        'mwpB2A0 mwpB1A1 mwpB0A2 mwpB0A1 mwpB1A0 mwpB0A1'.split(),
 
     'mixtokawc':
         'mwcB5A0 mwcB4A1 mwcB3A2 mwcB2A3 mwcB1A4 mwcB0A5 '
         'mwcB4A0 mwcB3A1 mwcB2A2 mwcB1A3 mwcB0A4 '
         'mwcB3A0 mwcB2A1 mwcB1A2 mwcB0A3 '
-        'mwcB2A0 mwcB1A1 mwcB0A1 mwcB1A0 mwcB0A1'.split(),
+        'mwcB2A0 mwcB1A1 mwcB0A2 mwcB0A1 mwcB1A0 mwcB0A1'.split(),
 
     'src': ['src'],
 
@@ -108,12 +108,13 @@ FEATURE_SETS = {
         'count headWordinSent headWordinPrevSent'.split(),
 }
 
-sum_feature_sets('genall', 'tok pos awc')
-sum_feature_sets('genpos', 'tok pos')
-sum_feature_sets('gentok', 'tok awc')
-
 sum_feature_sets('base', 'tok pos awc')
-sum_feature_sets('all', 'tok pos awc mixtokpos mixtokawc')
+
+sum_feature_sets('genpos', 'tok pos')
+sum_feature_sets('genawc', 'tok awc')
+sum_feature_sets('genall', 'tok pos awc')
+sum_feature_sets('genmix', 'mixtokpos mixtokawc')
+sum_feature_sets('genallmix', 'tok pos awc mixtokpos mixtokawc')
 
 compose_feature_set('wordsBeforeNP', 'wB', 'NP1')
 compose_feature_set('Preposition', 'prep', 'NP1')

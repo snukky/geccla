@@ -8,6 +8,7 @@ import math
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../geccla')))
 
 from run_geccla import assert_file_exists
+from run_geccla import result_is_ready
 from run_geccla import ALGORITHMS
 
 import cmd
@@ -29,17 +30,18 @@ def main():
     split_data = split_m2_data if args.m2 else split_txt_data
     split_data(args.data, cross_filebase, args.parts)
 
+    eval_files = ' '.join(args.eval)
+
     for part in format_parts(args.parts):
         log.info("CROSS VALIDATION PART {}".format(part))
 
         create_train_files(cross_filebase, part, args.parts, args.more_data)
 
         cross_file = cross_filebase + '.' + part
-        train_cross(cross_file, args.algorithm, args.confusion_set, args.m2)
+        train_cross(cross_file, args.algorithm, args.confusion_set, args.m2, args.geccla)
 
-        for eval in args.eval:
-            log.info("PART {} - EVALUATING ON FILE: {}".format(part, eval))
-            eval_cross(cross_file, eval, args.m2)
+        log.info("PART {} - EVALUATING ON FILES: {}".format(part, eval_files))
+        eval_cross(cross_file, eval_files, args.m2)
 
     log.info("AVERAGING PARAMS")
     param_sets = collect_evaluation_params(cross_filebase, args.parts)
@@ -48,75 +50,45 @@ def main():
     log.info("TRAINING ON ALL DATA")
     train_file = os.path.join(args.work_dir, 'train.txt')
 
-    if args.m2:
-        cmd.run("cat {data} | perl {root}/make_parallel.perl > {out}" \
-            .format(root=config.SCRIPTS_DIR, data=args.data, out=train_file))
-    else:
-        cmd.run("cat {data} > {out}".format(data=args.data, out=train_file))
-    if args.more_data:
-        cmd.run("cat {data} >> {out}".format(data=args.more_data, out=train_file))
+    create_train_file(train_file, args.data, args.more_data, args.m2)
 
     release_dir = os.path.join(args.work_dir, 'release')
-    train_geccla(release_dir, train_file, args.algorithm, args.confusion_set, evl_opts)
+    options = " --evl-opts ' {}' {}".format(evl_opts, args.geccla)
+    train_geccla(release_dir, train_file, args.algorithm, args.confusion_set, options)
 
-    for eval in args.eval:
-        log.info("EVALUATING FILE: {}".format(eval))
-        run_geccla(release_dir, eval, args.m2)
+    log.info("EVALUATING ON FILES: {}".format(eval_files))
+    run_geccla(release_dir, eval_files, args.m2)
     
 
 def split_m2_data(m2_file, filepath, num_of_parts):
-    parts = format_parts(num_of_parts)
-    log.info("part numbers: {}".format(' '.join(parts)))
+    if result_is_ready('{}.00.txt'.format(filepath)):
+        return
 
-    num_of_sents = int(cmd.run("grep -c '^S ' {}".format(m2_file)))
-    log.info("total number of sentences in data: {}".format(num_of_sents))
-
-    part_size = math.ceil(num_of_sents / float(num_of_parts))
-    log.info("number of sentences in one part: {}".format(part_size))
-
-    log.info("splitting M2 file {}".format(m2_file))
-    part_io = open('{}.{}.m2'.format(filepath, parts.pop(0)), 'w+')
-    s = 0
-    with open(m2_file) as m2_io:
-        for line in m2_io:
-            if line.startswith("S "):
-                s += 1
-            part_io.write(line)
-            if s >= part_size and line.strip() == '':
-                part_io.close()
-                part_io = open('{}.{}.m2'.format(filepath, parts.pop(0)), 'w+')
-                s = 0
-    part_io.close()
-
+    cmd.run("python {root}/split_m2.py -n {n} -p {fp}. -s .m2 {m2}" \
+        .format(root=config.SCRIPTS_DIR, n=num_of_parts, fp=filepath, m2=m2_file))
+    
     log.info("preparing text data from M2 files")
     for part in format_parts(num_of_parts):
         cmd.run("cat {fp}.{p}.m2 | perl {root}/make_parallel.perl > {fp}.{p}.txt" \
             .format(root=config.SCRIPTS_DIR, fp=filepath, p=part))
 
 def split_txt_data(txt_file, filepath, num_of_parts):
-    parts = format_parts(num_of_parts)
-    log.info("part numbers: {}".format(' '.join(parts)))
+    if result_is_ready('{}.00.txt'.format(filepath)):
+        return
 
-    num_of_sents = cmd.wc(txt_file)
-    log.info("total number of sentences in data: {}".format(num_of_sents))
+    num_of_lines = cmd.wc(txt_file)
+    log.info("total number of lines: {}".format(num_of_sents))
 
     part_size = math.ceil(num_of_sents / float(num_of_parts))
-    log.info("number of sentences in one part: {}".format(part_size))
+    log.info("number of lines per part: {}".format(part_size))
 
-    log.info("splitting text file {}".format(txt_file))
-    part_io = open('{}.{}.txt'.format(filepath, parts.pop(0)), 'w+')
-    s = 0
-    with open(txt_file) as txt_io:
-        for line in txt_io:
-            s += 1
-            part_io.write(line)
-            if s >= part_size:
-                part_io.close()
-                part_io = open('{}.{}.txt'.format(filepath, parts.pop(0)), 'w+')
-                s = 0
-    part_io.close()
+    cmd.run("split --lines {size} -d --additional-suffix .txt {txt} {fp}." \
+        .format(txt=txt_file, size=part_size, fp=filepath))
 
 def create_train_files(filepath, part, num_of_parts, more_data=None):
+    if result_is_ready('{}.{}.train.txt'.format(filepath, part)):
+        return
+
     train_files = ' '.join(["{}.{}.txt".format(filepath, p) 
                             for p in format_parts(num_of_parts) 
                             if p != part])
@@ -126,55 +98,79 @@ def create_train_files(filepath, part, num_of_parts, more_data=None):
         cmd.run("cat {} >> {}.{}.train.txt".format(more_data, filepath, part))
 
 
-def train_cross(crosspath, algorithm, confset, m2=False):
+def train_cross(crosspath, algorithm, confset, m2, options):
+    if result_is_ready('{}/output.train'.format(crosspath)):
+        return
+
     if not os.path.exists(crosspath):
         os.makedirs(crosspath)
 
     ext = 'm2' if m2 else 'txt'
-    command = "python {root}/../bin/run_geccla.py" \
+    m2_opt = '--m2' if m2 else ''
+
+    command = "python {root}/../bin/run_geccla.py {opts}" \
         " --work-dir {cv}" \
         " --confusion-set {cs} --algorithm {alg} --model {cv}/cross.model" \
         " --train {cv}.train.txt" \
-        " --run {cv}.{ext} --tune {cv}.{ext} --eval" \
+        " --run {cv}.{ext} --tune {cv}.{ext} --eval {m2}" \
         " > {cv}/output.train 2>&1" \
         .format(root=config.ROOT_DIR, alg=algorithm, cs=confset, 
-                cv=crosspath, ext=ext)
-    if m2:
-        command += " --m2"
+                cv=crosspath, ext=ext, opts=options, m2=m2_opt)
     cmd.run(command)
 
-def eval_cross(crosspath, eval_file, m2=False):
+def eval_cross(crosspath, eval_files, m2):
+    if result_is_ready('{}/output.eval'.format(crosspath)):
+        return
+
     ext = 'm2' if m2 else 'txt'
+    m2_opt = '--m2' if m2 else ''
+
     command = "python {root}/../bin/run_geccla.py" \
         " --work-dir {cv} --model {cv}/cross.model" \
-        " --run {eval} --eval" \
-        " > {cv}/output.eval.{num} 2>&1" \
+        " --run {eval} --eval {m2}" \
+        " > {cv}/output.eval 2>&1" \
         .format(root=config.ROOT_DIR, cv=crosspath, ext=ext, 
-                eval=eval_file, num=cmd.base_filename(eval_file))
-    if m2:
-        command += " --m2"
+                eval=eval_files, m2=m2_opt)
     cmd.run(command)
 
-def train_geccla(release_dir, train_file, algorithm, confset, evl_opts):
+def create_train_file(train_file, data, more_data, m2):
+    if result_is_ready(train_file):
+        return 
+
+    if m2:
+        cmd.run("cat {data} | perl {root}/make_parallel.perl > {out}" \
+            .format(root=config.SCRIPTS_DIR, data=data, out=train_file))
+    else:
+        cmd.run("cat {data} > {out}".format(data=data, out=train_file))
+
+    if more_data:
+        cmd.run("cat {data} >> {out}".format(data=more_data, out=train_file))
+
+def train_geccla(release_dir, train_file, algorithm, confset, options):
+    if result_is_ready('{}/output.train'.format(release_dir)):
+        return
+
     os.makedirs(release_dir)
-    command = "python {root}/../bin/run_geccla.py" \
+    command = "python {root}/../bin/run_geccla.py {opts}" \
         " --work-dir {rel}" \
         " --confusion-set {cs} --algorithm {alg} --model {rel}/release.model" \
-        " --train {train} --evl-opts ' {opts}'" \
+        " --train {train} " \
         " > {rel}/output.train 2>&1" \
         .format(root=config.ROOT_DIR, alg=algorithm, cs=confset, 
-                train=train_file, rel=release_dir, opts=evl_opts)
+                train=train_file, rel=release_dir, opts=options)
     cmd.run(command)
 
-def run_geccla(release_dir, eval_file, m2=False):
+def run_geccla(release_dir, eval_files, m2=False):
+    if result_is_ready('{}/output.eval'.format(release_dir)):
+        return
+
+    m2_opt = '--m2' if m2 else ''
+
     command = "python {root}/../bin/run_geccla.py" \
         " --work-dir {rel} --model {rel}/release.model" \
-        " --run {eval} --eval" \
-        " > {rel}/output.eval.{num} 2>&1" \
-        .format(root=config.ROOT_DIR, rel=release_dir, eval=eval_file,
-                num=cmd.base_filename(eval_file))
-    if m2:
-        command += " --m2"
+        " --run {eval} --eval {m2}" \
+        " > {rel}/output.eval 2>&1" \
+        .format(root=config.ROOT_DIR, rel=release_dir, eval=eval_files, m2=m2_opt)
     cmd.run(command)
 
 
@@ -200,7 +196,7 @@ def average_param_sets(param_sets):
         return ""
     avg_thr = sum(pair[0] for pair in param_sets) / float(len(param_sets))
     avg_dif = sum(pair[1] for pair in param_sets) / float(len(param_sets))
-    log.debug("averaged params: t={:.4f} d={:.4f}".format(avg.thr, avg.dif))
+    log.debug("averaged params: t={:.4f} d={:.4f}".format(avg_thr, avg_dif))
     return "-t {} -d {}".format(avg_thr, avg_dif)
 
 
@@ -219,6 +215,10 @@ def parse_user_arguments():
         help="number of cross validation parts")
     base.add_argument("--work-dir", type=str, required=True,
         help="working directory")
+
+    geccla = parser.add_argument_group("geccla arguments")
+    geccla.add_argument('--geccla', type=str,
+        help="extra arguments for run_geccla.py script")
 
     parser.add_argument("-d", "--data", type=str, required=True,
         help="data for training and tuning classifier")

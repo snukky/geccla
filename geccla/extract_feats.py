@@ -13,7 +13,7 @@ def main():
     if args.artordet:
         extractor = ArtOrDetFeatures()
     else:
-        extractor = FeatureExtractor()
+        extractor = FeatureExtractor(feat_set=args.feature_set)
     
     for conf in extractor.extract_features(args.input_file, args.cnfs_file):
         print format_conf(conf)
@@ -27,8 +27,8 @@ def parse_user_arguments():
 
     parser.add_argument('--artordet', action='store_true',
         help="enable enhanced features for articles and determiners")
-    #parser.add_argument('-s', '--feature-set', type=str,
-        #help="set of predefined features")
+    parser.add_argument('-s', '--feature-set', type=str,
+        help="set of predefined features")
     
     return parser.parse_args()
 

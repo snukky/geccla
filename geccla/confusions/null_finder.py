@@ -108,7 +108,7 @@ class NullFinder(BasicFinder):
                 for level in all_tags.keys():
                     tags = self.__add_boundaries(all_tags[level])
                     ngram = self.__ngram(j, tags, 0)
-                    if ngram is not None and ngram in self.ngrams[level]:
+                    if ngram is not None and level in self.ngrams and ngram in self.ngrams[level]:
                         yield (i, i, '<null>', '<null>')
                         break
 

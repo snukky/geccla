@@ -6,8 +6,8 @@ sys.path.insert(0, os.path.dirname(__file__))
 from logger import log
 
 from collections import OrderedDict
-from features import sum_feature_sets
 from confusions import iterate_text_and_confs
+from features import FEATURE_SETS 
 
 from taggers.pos_tagger import StanfordPOSTagger as POSTagger
 from taggers.wc_tagger import WordClassTagger as WCTagger
@@ -17,8 +17,9 @@ import itertools
 
 class FeatureExtractor():
     
-    def __init__(self, window=4):
+    def __init__(self, window=4, feat_set=None):
         self.window = window
+        self.feat_set = feat_set or 'base'
         self.pos_tagger = POSTagger()
         self.wc_tagger = WCTagger()
 
@@ -50,11 +51,18 @@ class FeatureExtractor():
         ii, jj = i + self.window, j + self.window
 
         features = OrderedDict()
-        features.update(self.__extract_ngrams(ii, jj, sb_tokens, 'w'))
-        features.update(self.__extract_ngrams(ii, jj, sb_pos_tags, 'p'))
-        features.update(self.__extract_ngrams(ii, jj, sb_awc_tags, 'c'))
-        features.update(self.__extract_mixed_ngrams(ii, jj, sb_tokens, sb_pos_tags, 'mwp'))
-        features.update(self.__extract_mixed_ngrams(ii, jj, sb_tokens, sb_awc_tags, 'mcp'))
+
+        if 'wB1A1' in FEATURE_SETS[self.feat_set]:
+            features.update(self.__extract_ngrams(ii, jj, sb_tokens, 'w'))
+        if 'pB1A1' in FEATURE_SETS[self.feat_set]:
+            features.update(self.__extract_ngrams(ii, jj, sb_pos_tags, 'p'))
+        if 'cB1A1' in FEATURE_SETS[self.feat_set]:
+            features.update(self.__extract_ngrams(ii, jj, sb_awc_tags, 'c'))
+        if 'mwpB1A1' in FEATURE_SETS[self.feat_set]:
+            features.update(self.__extract_mixed_ngrams(ii, jj, sb_tokens, sb_pos_tags, 'mwp'))
+        if 'mcpB1A1' in FEATURE_SETS[self.feat_set]:
+            features.update(self.__extract_mixed_ngrams(ii, jj, sb_tokens, sb_awc_tags, 'mcp'))
+
         return features
         
     def __extract_ngrams(self, i, j, tokens, prefix):

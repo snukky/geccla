@@ -9,8 +9,9 @@ from difflib import SequenceMatcher
 
 class BasicFinder():
 
-    def __init__(self, conf_set):
+    def __init__(self, conf_set, greedy=True):
         self.confusion_set = ConfusionSet(conf_set) 
+        self.greedy = greedy
 
     def find_confusion_words(self, corpus):
         with open(corpus) as corpus_io:
@@ -20,10 +21,9 @@ class BasicFinder():
                 for i, err in enumerate(err_toks):
                     if (i,i+1) in edits:
                         cor = edits[(i,i+1)][1]
-                        #if cor != '<null>':
-                        yield (s, i, i+1, err, cor)
-                    elif (i,i) in edits:
-                        pass
+                        if self.greedy or self.confusion_set.include(cor):
+                            yield (s, i, i+1, err, cor)
+                    elif (i,i) in edits and (self.greedy or self.confusion_set.include_null()):
                         cor = edits[(i,i)][1]
                         yield (s, i, i, '<null>', cor)
                     elif self.confusion_set.include(err):
