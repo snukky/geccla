@@ -1,11 +1,22 @@
+### DIRS & TOOLS
+
 GECCLA_DIR = /home/romang/scripts/geccla
 
+# DATA SETS
 CONLL_NUCLE_M2 = /home/romang/data/nucle/nucle.m2
 
 CONLL_TEST2013_M2 = /home/romang/data/nucle/nucle.test2013.m2
 CONLL_TEST2014_M2 = /home/romang/data/nucle/nucle.test2014.m2
 
+CONLL_TEST2013_5TYPES_M2 = /home/romang/data/nucle/nucle.test2013.5types.m2
+
 LANG8_NAIST = /home/romang/data/lang8/lang8-naist.nltktok.clean.txt
+
+# CONSTANTS
+CS_ARTORDETS = a,an,the,
+CS_PREPS = on,from,for,of,about,to,at,in,with,by,
+
+### TARGETS
 
 # LANG8 NAIST + NUCLE
 nucle+lang8.txt: nucle.075.txt lang8.txt
@@ -20,6 +31,28 @@ lang8.err: lang8.txt
 lang8.txt: $(LANG8_NAIST)
 	cat $? > $@
 
+# TEST2013 ArtOrDets
+test2014.artordet.cor: test2014.artordet.txt
+	cut -f2 $? > $@
+test2014.artordet.err: test2014.artordet.txt
+	cut -f1 $? > $@
+
+test2014.artordet.txt: test2014.artordet.m2
+	cat $? | $(GECCLA_DIR)/scripts/make_parallel.perl > $@
+test2014.artordet.m2:
+	cat $(CONLL_TEST2014_M2) | $(GECCLA_DIR)/scripts/filter_m2.py -p ArtOrDet -c > $@
+
+test2014.artordet-nocor.m2:
+	cat $(CONLL_TEST2014_M2) | $(GECCLA_DIR)/scripts/filter_m2.py -p ArtOrDet > $@
+
+# TEST2014 Prep
+
+test2014.prep.m2:
+	cat $(CONLL_TEST2014_M2) | $(GECCLA_DIR)/scripts/filter_m2.py -p Prep -c > $@
+
+test2014.prep-nocor.m2:
+	cat $(CONLL_TEST2014_M2) | $(GECCLA_DIR)/scripts/filter_m2.py -p Prep > $@
+
 # TEST2014
 test2014.cor: test2014.txt
 	cut -f2 $? > $@
@@ -32,7 +65,37 @@ test2014.m2:
 	cat $(CONLL_TEST2014_M2) > $@
 
 clean-test2014:
-	rm -f test2014.txt test2014.err test2014.cor test2014.m2*
+	rm -f test2014.txt test2014.err test2014.cor test2014.m2* test2014.artordet* test2014.prep*
+
+# TEST2013 ArtOrDets
+test2013.artordet.cor: test2013.artordet.txt
+	cut -f2 $? > $@
+test2013.artordet.err: test2013.artordet.txt
+	cut -f1 $? > $@
+
+test2013.artordet.txt: test2013.artordet.m2
+	cat $? | $(GECCLA_DIR)/scripts/make_parallel.perl > $@
+test2013.artordet.m2:
+	cat $(CONLL_TEST2013_M2) | $(GECCLA_DIR)/scripts/filter_m2.py -p ArtOrDet -c > $@
+
+test2013.artordet-nocor.m2:
+	cat $(CONLL_TEST2013_M2) | $(GECCLA_DIR)/scripts/filter_m2.py -p ArtOrDet > $@
+
+# TEST2013 Prep
+
+test2013.prep.m2:
+	cat $(CONLL_TEST2013_M2) | $(GECCLA_DIR)/scripts/filter_m2.py -p Prep -c > $@
+
+# TEST2013 5types
+test2013.5types.cor: test2013.5types.txt
+	cut -f2 $? > $@
+test2013.5types.err: test2013.5types.txt
+	cut -f1 $? > $@
+
+test2013.5types.txt: test2013.5types.m2
+	cat $? | $(GECCLA_DIR)/scripts/make_parallel.perl > $@
+test2013.5types.m2:
+	cat $(CONLL_TEST2013_5TYPES_M2) > $@
 
 # TEST2013
 test2013.cor: test2013.txt
@@ -46,7 +109,7 @@ test2013.m2:
 	cat $(CONLL_TEST2013_M2) > $@
 
 clean-test2013:
-	rm -f test2013.txt test2013.err test2013.cor test2013.m2*
+	rm -f test2013.txt test2013.err test2013.cor test2013.m2* test2013.5types.* test2013.artordet*
 
 # NUCLE 1/4 and 3/4 for cross evaluation
 nucle.075.txt: nucle.075.m2
