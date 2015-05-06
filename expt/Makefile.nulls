@@ -1,74 +1,94 @@
 include Makefile.data
+include Makefile.bigdata
 
 LEVELS = tok pos awc pos,awc
-CS_ARTORDETS = a,an,the,
 
-all: test2013.*.eval nucle.*.eval
+# corpus for training ngrams, allowe options: nucle, lang8, ccrawl
+NGRAMS_PREFIX = ccrawl
 
-test2013.*.eval: test2013.artordet.eval test2013.nucle.eval test2013.lang8.eval
+# corpus for evaluation, allowed options: test2013, nucle
+CORPUS_PREFIX = nucle
 
-nucle.*.eval: nucle.artordet.eval nucle.lang8.eval
 
-# evaluation after training on Lang8
-test2013.lang8.eval: test2013.gold.cnfs test2013.lang8.*.cnfs
+eval: nucle.artordet.eval nucle.allspaces.eval nucle.ccrawl-5.eval nucle.ccrawl-50.eval nucle.ccrawl-500.eval
+
+### EVALUATION ON NUCLE
+
+# evaluation of ngram-based method (CCrawl)
+nucle.ccrawl-500.eval: nucle.gold.cnfs nucle.ccrawl-500.*.cnfs
 	rm -f $@
 	for level in $(LEVELS) ; do \
-		python $(GECCLA_DIR)/scripts/eval_cnfs.py test2013.lang8.$$level.cnfs $(word 1,$^) --null >> $@ ; \
-	done
-test2013.lang8.*.cnfs: test2013.err lang8.ngrams.*
-	for level in $(LEVELS) ; do \
-		python $(GECCLA_DIR)/geccla/find_confs.py -c $(CS_ARTORDETS) -l $$level -n lang8.ngrams $(word 1,$^) > test2013.lang8.$$level.cnfs ; \
+		python $(GECCLA_DIR)/scripts/eval_cnfs.py nucle.ccrawl-500.$$level.cnfs $(word 1,$^) --null >> $@ ; \
 	done
 
+nucle.ccrawl-500.*.cnfs: nucle.err ccrawl.ngrams.*
+	for level in $(LEVELS) ; do \
+		python $(GECCLA_DIR)/geccla/find_confs.py --min-count 500 -c $(CS_ARTORDETS) -l $$level -n ccrawl.ngrams $(word 1,$^) > nucle.ccrawl-500.$$level.cnfs ; \
+	done
+
+nucle.ccrawl-50.eval: nucle.gold.cnfs nucle.ccrawl-50.*.cnfs
+	rm -f $@
+	for level in $(LEVELS) ; do \
+		python $(GECCLA_DIR)/scripts/eval_cnfs.py nucle.ccrawl-50.$$level.cnfs $(word 1,$^) --null >> $@ ; \
+	done
+
+nucle.ccrawl-50.*.cnfs: nucle.err ccrawl.ngrams.*
+	for level in $(LEVELS) ; do \
+		python $(GECCLA_DIR)/geccla/find_confs.py --min-count 50 -c $(CS_ARTORDETS) -l $$level -n ccrawl.ngrams $(word 1,$^) > nucle.ccrawl-50.$$level.cnfs ; \
+	done
+
+nucle.ccrawl-5.eval: nucle.gold.cnfs nucle.ccrawl-5.*.cnfs
+	rm -f $@
+	for level in $(LEVELS) ; do \
+		python $(GECCLA_DIR)/scripts/eval_cnfs.py nucle.ccrawl-5.$$level.cnfs $(word 1,$^) --null >> $@ ; \
+	done
+
+nucle.ccrawl-5.*.cnfs: nucle.err ccrawl.ngrams.*
+	for level in $(LEVELS) ; do \
+		python $(GECCLA_DIR)/geccla/find_confs.py --min-count 5 -c $(CS_ARTORDETS) -l $$level -n ccrawl.ngrams $(word 1,$^) > nucle.ccrawl-5.$$level.cnfs ; \
+	done
+
+# evaluation of ngram-based method (Lang8)
 nucle.lang8.eval: nucle.gold.cnfs nucle.lang8.*.cnfs
 	rm -f $@
 	for level in $(LEVELS) ; do \
 		python $(GECCLA_DIR)/scripts/eval_cnfs.py nucle.lang8.$$level.cnfs $(word 1,$^) --null >> $@ ; \
 	done
+
 nucle.lang8.*.cnfs: nucle.err lang8.ngrams.*
 	for level in $(LEVELS) ; do \
 		python $(GECCLA_DIR)/geccla/find_confs.py -c $(CS_ARTORDETS) -l $$level -n lang8.ngrams $(word 1,$^) > nucle.lang8.$$level.cnfs ; \
 	done
 
-# evaluation after training on NUCLE
-test2013.nucle.eval: test2013.gold.cnfs test2013.nucle.*.cnfs
-	rm -f $@
-	for level in $(LEVELS) ; do \
-		python $(GECCLA_DIR)/scripts/eval_cnfs.py test2013.nucle.$$level.cnfs $(word 1,$^) --null >> $@ ; \
-	done
-test2013.nucle.*.cnfs: test2013.err nucle.ngrams.*
-	for level in $(LEVELS) ; do \
-		python $(GECCLA_DIR)/geccla/find_confs.py -c $(CS_ARTORDETS) -l $$level -n nucle.ngrams $(word 1,$^) > test2013.nucle.$$level.cnfs ; \
-	done
-
 # evaluation of heuristic method
-test2013.artordet.eval: test2013.gold.cnfs test2013.artordet.*.cnfs
-	rm -f $@
-	for level in 1 2 3 ; do \
-		python $(GECCLA_DIR)/scripts/eval_cnfs.py test2013.artordet.$$level.cnfs $(word 1,$^) --null >> $@ ; \
-	done
-test2013.artordet.*.cnfs: test2013.err
-	for num in 1 2 3 ; do \
-		python $(GECCLA_DIR)/geccla/find_confs.py --artordet -l $$num $^ > test2013.artordet.$$num.cnfs ; \
-	done
-
 nucle.artordet.eval: nucle.gold.cnfs nucle.artordet.*.cnfs
 	rm -f $@
 	for level in 1 2 3 ; do \
 		python $(GECCLA_DIR)/scripts/eval_cnfs.py nucle.artordet.$$level.cnfs $(word 1,$^) --null >> $@ ; \
 	done
+
 nucle.artordet.*.cnfs: nucle.err
 	for num in 1 2 3 ; do \
 		python $(GECCLA_DIR)/geccla/find_confs.py --artordet -l $$num $^ > nucle.artordet.$$num.cnfs ; \
 	done
 
-# gold standards
-test2013.gold.cnfs: test2013.txt
-	python $(GECCLA_DIR)/geccla/find_confs.py -c $(CS_ARTORDETS) $^ > $@
+# evaluation of naive method
+nucle.allspaces.eval: nucle.allspaces.cnfs nucle.gold.cnfs
+	python $(GECCLA_DIR)/scripts/eval_cnfs.py $^ --null >> $@
 
+nucle.allspaces.cnfs: nucle.err
+	python $(GECCLA_DIR)/geccla/find_confs.py -c $(CS_ARTORDETS) --all-spaces-as-nulls $^ > $@
+
+
+### GOLD STANDARDS
 nucle.gold.cnfs: nucle.txt
 	python $(GECCLA_DIR)/geccla/find_confs.py -c $(CS_ARTORDETS) $^ > $@
 
+test2014.gold.cnfs: test2014.txt
+	python $(GECCLA_DIR)/geccla/find_confs.py -c $(CS_ARTORDETS) $^ > $@
+
+
+### LISTS OF NGRAMS
 
 # NUCLE n-grams
 nucle.ngrams.*: nucle.txt
@@ -78,8 +98,14 @@ nucle.ngrams.*: nucle.txt
 lang8.ngrams.*: lang8.err
 	python $(GECCLA_DIR)/geccla/train_nulls.py -c $(CS_ARTORDETS) -l tok,pos,awc -n lang8.ngrams $?
 
+# CCrawl n-grams
+ccrawl.ngrams.*: corpus.nltktok.lc.sb.txt
+	python $(GECCLA_DIR)/geccla/train_nulls.py -c $(CS_ARTORDETS) -l tok,pos,awc -n ccrawl.ngrams $?
+
+
+### CLEAN
 
 clean: 
-	rm -f test2013.*.cnfs nucle.*.cnfs nucle.ngrams.* lang8.ngrams.* nucle.txt.* lang8.txt.* *.eval
+	rm -f test2013*.cnfs nucle*.cnfs nucle.txt* lang8.txt* *.eval
 
 .PHONY: clean

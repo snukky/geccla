@@ -1,5 +1,4 @@
 ### DIRS & TOOLS
-
 GECCLA_DIR = /home/romang/scripts/geccla
 
 # DATA SETS
@@ -16,10 +15,13 @@ LANG8_NAIST = /home/romang/data/lang8/lang8-naist.nltktok.clean.txt
 CS_ARTORDETS = a,an,the,
 CS_PREPS = on,from,for,of,about,to,at,in,with,by,
 
+
 ### TARGETS
 
 # LANG8 NAIST + NUCLE
-nucle+lang8.txt: nucle.075.txt lang8.txt
+nucle+lang8.txt: nucle.txt lang8.txt
+	cat $? > $@
+nucle.075+lang8.txt: nucle.075.txt lang8.txt
 	cat $? > $@
 
 # LANG8 NAIST
@@ -31,60 +33,88 @@ lang8.err: lang8.txt
 lang8.txt: $(LANG8_NAIST)
 	cat $? > $@
 
-# TEST2013 ArtOrDets
-test2014.artordet.cor: test2014.artordet.txt
-	cut -f2 $? > $@
-test2014.artordet.err: test2014.artordet.txt
-	cut -f1 $? > $@
+clean-lang8:
+	rm -f lang8*.txt lang8*.err lang8*.cor lang8*.m2
 
-test2014.artordet.txt: test2014.artordet.m2
-	cat $? | $(GECCLA_DIR)/scripts/make_parallel.perl > $@
-test2014.artordet.m2:
+# TEST2014 ArtOrDets
+test2014.ArtOrDet.m2:
 	cat $(CONLL_TEST2014_M2) | $(GECCLA_DIR)/scripts/filter_m2.py -p ArtOrDet -c > $@
 
-test2014.artordet-nocor.m2:
-	cat $(CONLL_TEST2014_M2) | $(GECCLA_DIR)/scripts/filter_m2.py -p ArtOrDet > $@
+test2014.cs_artordet.m2: test2014.err test2014.0.cor test2014.1.cor
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS) -t artordet $^ > $@
+test2014.cs_artordet.0.m2: test2014.err test2014.0.cor
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS) -t artordet $^ > $@
+test2014.cs_artordet.1.m2: test2014.err test2014.1.cor
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS) -t artordet $^ > $@
+
+test2014.cs_artordet.greedy.m2: test2014.err test2014.0.cor test2014.1.cor
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS) -t artordet --greedy $^ > $@
+test2014.cs_artordet.0.greedy.m2: test2014.err test2014.0.cor
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS) -t artordet --greedy $^ > $@
+test2014.cs_artordet.1.greedy.m2: test2014.err test2014.1.cor
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS) -t artordet --greedy $^ > $@
 
 # TEST2014 Prep
-
-test2014.prep.m2:
+test2014.Prep.m2:
 	cat $(CONLL_TEST2014_M2) | $(GECCLA_DIR)/scripts/filter_m2.py -p Prep -c > $@
 
-test2014.prep-nocor.m2:
-	cat $(CONLL_TEST2014_M2) | $(GECCLA_DIR)/scripts/filter_m2.py -p Prep > $@
+test2014.cs_prep.m2: test2014.err test2014.0.cor test2014.1.cor
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_PREPS) -t prep $^ > $@
+test2014.cs_prep.0.m2: test2014.err test2014.0.cor
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_PREPS) -t prep $^ > $@
+test2014.cs_prep.1.m2: test2014.err test2014.1.cor
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_PREPS) -t prep $^ > $@
+
+test2014.cs_prep.greedy.m2: test2014.err test2014.0.cor test2014.1.cor
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_PREPS) -t prep --greedy $^ > $@
+test2014.cs_prep.0.greedy.m2: test2014.err test2014.0.cor
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_PREPS) -t prep --greedy $^ > $@
+test2014.cs_prep.1.greedy.m2: test2014.err test2014.1.cor
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_PREPS) -t prep --greedy $^ > $@
 
 # TEST2014
-test2014.cor: test2014.txt
+test2014.1.cor: test2014.1.txt
 	cut -f2 $? > $@
+test2014.0.cor: test2014.0.txt
+	cut -f2 $? > $@
+test2014.cor: test2014.0.cor
+	cat $? > $@
+
 test2014.err: test2014.txt
 	cut -f1 $? > $@
 
-test2014.txt: test2014.m2
-	cat $? | $(GECCLA_DIR)/scripts/make_parallel.perl > $@
+test2014.1.txt: test2014.m2
+	cat $? | $(GECCLA_DIR)/scripts/make_parallel.perl -a 1 > $@
+test2014.0.txt: test2014.m2
+	cat $? | $(GECCLA_DIR)/scripts/make_parallel.perl -a 0 > $@
+test2014.txt: test2014.0.txt
+	cat $? > $@
+
 test2014.m2:
 	cat $(CONLL_TEST2014_M2) > $@
 
 clean-test2014:
-	rm -f test2014.txt test2014.err test2014.cor test2014.m2* test2014.artordet* test2014.prep*
+	rm -f test2014*.txt test2014*.err test2014*.cor test2014*.m2
 
 # TEST2013 ArtOrDets
-test2013.artordet.cor: test2013.artordet.txt
-	cut -f2 $? > $@
-test2013.artordet.err: test2013.artordet.txt
-	cut -f1 $? > $@
-
-test2013.artordet.txt: test2013.artordet.m2
-	cat $? | $(GECCLA_DIR)/scripts/make_parallel.perl > $@
-test2013.artordet.m2:
+test2013.ArtOrDet.m2:
 	cat $(CONLL_TEST2013_M2) | $(GECCLA_DIR)/scripts/filter_m2.py -p ArtOrDet -c > $@
 
-test2013.artordet-nocor.m2:
-	cat $(CONLL_TEST2013_M2) | $(GECCLA_DIR)/scripts/filter_m2.py -p ArtOrDet > $@
+test2013.cs_artordet.m2: test2013.err test2013.cor
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS) -t artordet $^ > $@
+
+test2013.cs_artordet.greedy.m2: test2013.err test2013.cor
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS) -t artordet --greedy $^ > $@
 
 # TEST2013 Prep
-
-test2013.prep.m2:
+test2013.Prep.m2:
 	cat $(CONLL_TEST2013_M2) | $(GECCLA_DIR)/scripts/filter_m2.py -p Prep -c > $@
+
+test2013.cs_prep.m2: test2013.err test2013.cor
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_PREPS) -t prep $^ > $@
+
+test2013.cs_prep.greedy.m2: test2013.err test2013.cor
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_PREPS) -t prep --greedy $^ > $@
 
 # TEST2013 5types
 test2013.5types.cor: test2013.5types.txt
@@ -109,7 +139,7 @@ test2013.m2:
 	cat $(CONLL_TEST2013_M2) > $@
 
 clean-test2013:
-	rm -f test2013.txt test2013.err test2013.cor test2013.m2* test2013.5types.* test2013.artordet*
+	rm -f test2013*.txt test2013*.err test2013*.cor test2013*.m2
 
 # NUCLE 1/4 and 3/4 for cross evaluation
 nucle.075.txt: nucle.075.m2
@@ -124,6 +154,12 @@ nucle.025.m2: nucle.m2
 	cat $?.00 > $@
 
 # NUCLE
+nucle.cs_artordet.m2: nucle.err nucle.cor
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS) -t artordet $^ > $@
+
+nucle.cs_prep.m2: nucle.err nucle.cor
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_PREPS) -t prep $^ > $@
+
 nucle.cor: nucle.txt
 	cut -f2 $? > $@
 nucle.err: nucle.txt
@@ -135,9 +171,9 @@ nucle.m2:
 	cat $(CONLL_NUCLE_M2) > $@
 
 clean-nucle:
-	rm -f nucle.txt nucle.err nucle.cor nucle.m2* nucle.0?5.txt nucle.0?5.m2
+	rm -f nucle*.txt nucle*.err nucle*.cor nucle*.m2
 
 # CLEAN
-clean: clean-nucle clean-test2013 clean-test2014
+clean: clean-nucle clean-test2013 clean-test2014 clean-lang8
 
-.PHONY: clean clean-nucle clean-test2013 clean-test2014
+.PHONY: clean clean-nucle clean-test2013 clean-test2014 clean-lang8
