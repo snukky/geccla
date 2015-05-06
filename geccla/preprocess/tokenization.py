@@ -2,6 +2,7 @@ import os
 import sys
 import codecs
 import difflib
+import math
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -102,3 +103,24 @@ def restore_sentence_tok(sent, orig_sent, quotes=False):
     new_sent = ' '.join(new_toks)
     log.debug('    : {}'.format(new_sent))
     return new_sent
+
+def map_tokens(toks1, toks2):
+    matcher = difflib.SequenceMatcher(None, toks1, toks2)
+    mapping = []
+
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == 'replace':
+            step = (j2-j1) / float(i2-i1)
+            mapping += [int(math.floor(j1 + x*step)) for x in xrange(i2-i1)]
+        elif tag == 'delete':
+            mapping += [mapping[-1]] * i2-i1
+        elif tag == 'insert':
+            pass
+        else:
+            mapping += [j1+x for x in xrange(i2-i1)]
+    
+    if mapping[-1] >= len(toks2): 
+        log.error("mapped index out of range\nmaps : {}\ntoks1: {}\ntoks2: {}" \
+            .format(mapping, ' '.join(toks1), ' '.join(toks2))) 
+            
+    return mapping

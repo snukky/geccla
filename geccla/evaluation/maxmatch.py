@@ -21,7 +21,8 @@ def run_m2_grid_search(conf_set, format,
                        text_file, cnfs_file, pred_file, m2_file,
                        grid_file=None, work_dir=None,
                        steps=(10,1),
-                       deep=True):
+                       deep=True,
+                       restore_articles=False):
 
     if not work_dir:
         work_dir = os.getpid()
@@ -45,7 +46,8 @@ def run_m2_grid_search(conf_set, format,
 
         inject_predictions(conf_set, format, 
                            text_file, cnfs_file, pred_file, 
-                           thr, dif, out_file)
+                           thr, dif, out_file, 
+                           restore_articles)
         cmd.wdiff(err_file, out_file)
 
         prec, rec, fscore = evaluate_m2(out_file, m2_file)
@@ -61,7 +63,8 @@ def run_m2_grid_search(conf_set, format,
 
         inject_predictions(conf_set, format, 
                            text_file, cnfs_file, pred_file, 
-                           thr, dif, out_file)
+                           thr, dif, out_file, 
+                           restore_articles)
         cmd.wdiff(err_file, out_file)
 
         prec, rec, fscore = evaluate_m2(out_file, m2_file)

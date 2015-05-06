@@ -23,10 +23,12 @@ def main():
         finder = NullFinder(args.confusion_set)
         confs = finder.find_confusion_nulls(args.input_file, 
                                             args.ngrams_prefix,
-                                            args.levels)
+                                            args.levels,
+                                            args.min_count)
     else:
-        finder = BasicFinder(args.confusion_set, not args.no_greedy)
-        confs = finder.find_confusion_words(args.input_file)
+        finder = BasicFinder(args.confusion_set)
+        confs = finder.find_confusion_words(args.input_file, not args.lazy, 
+                                            args.all_spaces_as_nulls)
 
     for conf in confs:
         print format_conf(conf)
@@ -45,11 +47,15 @@ def parse_user_arguments():
     parser.add_argument('-l', '--levels', type=str,
         help="levels of n-grams extraction as comma-separated list "
              "(or numerical value when --artordet is active)")
+    parser.add_argument('--min-count', type=int, default=5,
+        help="required minimum frequency of ngrams")
 
-    parser.add_argument('--no-greedy', action='store_true',
+    parser.add_argument('--lazy', action='store_true',
         help="do not add <null> examples if not in confusion set")
     parser.add_argument('--artordet', action='store_true',
         help="enable enhanced finding rules for articles and determiners")
+    parser.add_argument('--all-spaces-as-nulls', action='store_true',
+        help="extract all spaces as <null> examples")
     
     args = parser.parse_args()
 
@@ -65,12 +71,13 @@ def parse_user_arguments():
                 .format(', '.join(NullFinder.LEVELS)))
 
     if args.artordet:
-        args.confusion_set = 'a,the,'
+        if not args.confusion_set:
+            args.confusion_set = 'a,the,'
         if not args.levels:
             args.levels = 2
         args.levels = int(args.levels)
 
-    if not args.levels:
+    elif not args.levels:
         args.levels = 'tok pos awc'.split()
 
     return args

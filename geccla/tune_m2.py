@@ -16,7 +16,8 @@ def main():
                  args.m2_file,
                  args.grid_file, args.work_dir,
                  (args.thr_steps, args.dif_steps),
-                 args.no_deep)
+                 args.no_deep,
+                 args.restore_articles)
     print "\t".join(map(str, result))
 
 
@@ -52,6 +53,8 @@ def parse_user_arguments():
         help="file to store grid search table")
     parser.add_argument('-w', '--work-dir', type=str,
         help="working dir")
+    parser.add_argument('--restore-articles', action='store_true',
+        help="restore indefinite articles")
 
     return parser.parse_args()
 

@@ -15,7 +15,7 @@ def normalize_indef_articles(text_file, nrm_file):
     with open(text_file) as text_io:
         for line in text_io:
             nrm_io.write(re.sub(r"\bAn\b", r"A", 
-                         re.sub(r"\nan\b", r"a", line)))
+                         re.sub(r"\ban\b", r"a", line)))
     nrm_io.close()
     return nrm_file
 
@@ -23,11 +23,13 @@ def restore_indef_articles(input_file, output_file):
     output_io = open(output_file, 'w+')
     with open(input_file) as input_io:
         for line in input_io:
-            output_io.write(restore_indef_articles_in_sentence(line.strip()))
+            sents = [restore_indef_articles(sent) 
+                     for sent in line.strip().split("\t")]
+            output_io.write("\t".join(sents) + "\n")
     output_io.close()
     return output_file
 
-def restore_indef_articles_in_sentence(sent):
+def restore_indef_articles_in_sent(sent):
     words = sent.split()
 
     if len(words) < 2:

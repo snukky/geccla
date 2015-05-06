@@ -9,25 +9,33 @@ from difflib import SequenceMatcher
 
 class BasicFinder():
 
-    def __init__(self, conf_set, greedy=True):
+    def __init__(self, conf_set):
         self.confusion_set = ConfusionSet(conf_set) 
-        self.greedy = greedy
 
-    def find_confusion_words(self, corpus):
+    def find_confusion_words(self, corpus, greedy=True, nulls=False):
         with open(corpus) as corpus_io:
             for s, line in enumerate(corpus_io):
                 err_toks, edits = self.parse_corpus_line(line)
+                added = False
 
                 for i, err in enumerate(err_toks):
                     if (i,i+1) in edits:
                         cor = edits[(i,i+1)][1]
-                        if self.greedy or self.confusion_set.include(cor):
+                        if greedy or self.confusion_set.include(cor):
                             yield (s, i, i+1, err, cor)
-                    elif (i,i) in edits and (self.greedy or self.confusion_set.include_null()):
+                            added = True
+                    elif (i,i) in edits and (greedy or self.confusion_set.include_null()):
                         cor = edits[(i,i)][1]
                         yield (s, i, i, '<null>', cor)
+                        added = False
                     elif self.confusion_set.include(err):
                         yield (s, i, i+1, err, err)
+                        added = True
+                    elif nulls and not added:
+                        yield (s, i, i, '<null>', '<null>')
+                        added = False
+                    else:
+                        added = False
 
     def parse_corpus_line(self, line):
         if "\t" in line:

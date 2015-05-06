@@ -30,15 +30,15 @@ class NullFinder(BasicFinder):
         self.ngrams = {}
         self.__clean = clean
 
-    def find_confusion_nulls(self, 
-                             corpus, 
-                             ngrams_prefix=None, 
-                             levels=['tok', 'awc']):
+    def find_confusion_nulls(self, corpus, 
+                                   ngrams_prefix=None, 
+                                   levels=LEVELS,
+                                   min_count=5):
         """
         Finds <null> positions for given lists of n-grams at certain processing
         levels, e.g. tokens, part-of-speech tags and/or automatic word classes.
         """
-        self.__load_ngrams(ngrams_prefix, levels)
+        self.__load_ngrams(ngrams_prefix, levels, min_count)
         files = self.__tag_file(corpus, levels)
         n = 0
 
@@ -61,13 +61,14 @@ class NullFinder(BasicFinder):
         for level in levels:
             files[level].close()
     
-    def __load_ngrams(self, ngrams_prefix, levels):
+    def __load_ngrams(self, ngrams_prefix, levels, min_count=5):
         if not ngrams_prefix:
             return
             
         for level in levels:
             file = ngrams_prefix + '.' + level
-            log.info("loading n-grams from file '{}'".format(file))
+            log.info("loading n-grams from file '{}' (min count = {})" \
+                .format(file, min_count))
 
             if not os.path.exists(file):
                 log.warn("file '{}' for level {} does not exist!" \
@@ -77,7 +78,10 @@ class NullFinder(BasicFinder):
             self.__read_info_line(file)
 
             with open(file) as f:
-                ngrams = [line.strip() for line in f.readlines()[1:-1]]
+                ngrams_with_counts = [line.strip().split("\t") 
+                                      for line in f.readlines()[1:-1]]
+                ngrams = [pair[0] for pair in ngrams_with_counts 
+                                  if len(pair) == 2 and int(pair[-1]) >= min_count]
                 log.info("{} ngrams loaded for '{}' level".format(len(ngrams), level))
                 self.ngrams[level] = set(ngrams)
 
@@ -115,7 +119,7 @@ class NullFinder(BasicFinder):
 
     def train_ngrams(self, corpus, ngrams_prefix, 
                      left_context=1, right_context=3, min_count=5,
-                     levels=['tok']):
+                     levels=LEVELS):
         """
         Extracts n-grams at various processing levels for further finding of 
         <null> positions.
@@ -141,7 +145,7 @@ class NullFinder(BasicFinder):
     def __tag_file(self, corpus, levels):
         input = cmd.source_side_of_file(corpus)
 
-        log.info("tagging file {} at levels: {}".format(input, ', '.join(levels)))
+        log.info("tagging file {} at level: {}".format(input, ', '.join(levels)))
 
         files = {}
 
@@ -185,14 +189,14 @@ class NullFinder(BasicFinder):
 
     def __count_frequencies(self, list_file, freq_file):
         log.info("counting n-gram frequencies in file {}...".format(list_file))
-        cmd.run("cat {0} | sort | uniq -c | sort -nr > {1}" \
-            .format(list_file, freq_file))
+        cmd.run("cat {0} | sort -S 10G --parallel 8 | uniq -c " \
+          "| sort -S 10G --parallel 8 -nr > {1}".format(list_file, freq_file))
 
-    def __save_ngrams(self, freq_file, ngram_file, min_count):
+    def __save_ngrams(self, freq_file, ngram_file, min_count=2):
         log.debug("storing n-gram frequencies to file {}...".format(ngram_file))
-        line_num = cmd.run("cat {0} | grep -Pn ' +{1} .*' | tr ':' '\\t'" \
+        line_num = cmd.run("cat {0} | grep -Pn '^ +{1} .*' | tr ':' '\\t'" \
             " | cut -f1 | tail -1".format(freq_file, min_count))
-        cmd.run("head -n {} {} | sed -r 's/ *[0-9]+ (.*)/\\1/' >> {}" \
+        cmd.run("head -n {} {} | sed -r 's/^ *([0-9]+) (.*)/\\2\\t\\1/' >> {}" \
             .format(line_num.strip(), freq_file, ngram_file))
         
     def __extract_ngrams(self, tokens, tags):

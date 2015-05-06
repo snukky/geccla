@@ -17,11 +17,12 @@ def main():
     with open(args.file) as data:
         for line in data:
             err_sent, cor_sent = line.strip().split("\t")
-            new_sent = filter_edits(err_sent, cor_sent, conf_set)
+            new_sent = filter_edits(err_sent, cor_sent, conf_set, 
+                                    args.greedy, not args.no_spaces)
             print new_sent
 
         
-def filter_edits(err_sent, cor_sent, conf_set):
+def filter_edits(err_sent, cor_sent, conf_set, greedy=False, allow_spaces=True):
     err_toks = err_sent.split()
     cor_toks = cor_sent.split()
 
@@ -33,7 +34,9 @@ def filter_edits(err_sent, cor_sent, conf_set):
         cor_tok = ' '.join(cor_toks[j1:j2])
         
         if tag == 'replace':
-            if err_tok.lower() in conf_set and cor_tok.lower() in conf_set:
+            if greedy and (err_tok.lower() in conf_set or cor_tok.lower() in conf_set):
+                new_toks.append(cor_tok)
+            elif err_tok.lower() in conf_set and cor_tok.lower() in conf_set:
                 new_toks.append(cor_tok)
             else:
                 new_toks.append(err_tok)
@@ -53,14 +56,19 @@ def debug(msg):
         print >> sys.stderr, msg
 
 def parse_user_arguments():
-    parser = argparse.ArgumentParser(description="Extract errors from parallel"
-        " data given a confusion set")
+    parser = argparse.ArgumentParser(description="Extracts errors covered by"
+        " specified confusion set. Input is parallel data.")
 
     parser.add_argument('file', help="parallel file with input and system"
         " sentences")
     parser.add_argument('-c', '--confusion-set', type=str, 
         help="confusion set as comma-separated list of words")
-    parser.add_argument('--debug', action='store_true', help="show debug")
+    parser.add_argument('-g', '--greedy', action='store_true',
+        help="one word from confusion set in edit pair is sufficient")
+    parser.add_argument('-s', '--no-spaces', action='store_true',
+        help="do not allow spaces in confusion words (require --greedy)")
+    parser.add_argument('--debug', action='store_true', 
+        help="show debug")
 
     return parser.parse_args()
 

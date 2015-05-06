@@ -7,6 +7,7 @@ from logger import log
 
 from confusions.basic_finder import BasicFinder
 from taggers.lbj_chunker import LBJChunker
+from preprocess import tokenization
 
 import taggers.pos_helper as tags
 import cmd
@@ -17,7 +18,7 @@ class ArtOrDetFinder(BasicFinder):
     LEVELS = [1, 2, 3, '1', '2', '3']
 
     def __init__(self):
-        BasicFinder.__init__(self, 'a,the,')
+        BasicFinder.__init__(self, 'a,an,the,')
         self.chunker = LBJChunker()
 
     def find_confusion_artordets(self, corpus, level=2):
@@ -54,9 +55,11 @@ class ArtOrDetFinder(BasicFinder):
         3) Spaces in front of a noun phrase if that noun phrase does not start
            with an article.
         """
-        for i, err in enumerate(tokens):
-            # FIXME: is some skip required?
+        words = [w.lower() for w in chunks.words]
+        idx_map = tokenization.map_tokens([t.lower() for t in tokens], words)
+        #idx_map = [i for i in xrange(len(tokens))]
 
+        for i, err in enumerate(tokens):
             # all edited articles (including insertions and deletions) if data
             # has corrected version
             if (i,i+1) in edits:
@@ -78,10 +81,10 @@ class ArtOrDetFinder(BasicFinder):
             
             # spaces in front of a noun phrase if that noun phrase does not
             # start with an article
-            if chunks.is_NP_starting_at(i):
-                chunk = chunks.get_chunk_by_word_idx(i)
+            if chunks.is_NP_starting_at(idx_map[i]):
+                chunk = chunks.get_chunk_by_word_idx(idx_map[i])
 
-                # exclude all noun phrases not headed by a personal or
+                # exclude all noun phrases headed by a personal or
                 # demonstrative pronoun
                 if not tags.is_pronoun(chunk['pos'][-1]):
                     yield (i, i, '<null>', '<null>')
@@ -91,7 +94,7 @@ class ArtOrDetFinder(BasicFinder):
                 continue
 
             # spaces that follow a preposition or a verb
-            if i > 0 and (tags.is_prep(chunks.pos[i-1]) \
-                    or tags.is_verb(chunks.pos[i-1])):
+            if i > 0 and (tags.is_prep(chunks.pos[idx_map[i]-1]) \
+                    or tags.is_verb(chunks.pos[idx_map[i]-1])):
                 yield (i, i, '<null>', '<null>')
                 continue

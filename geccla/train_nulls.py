@@ -25,7 +25,7 @@ def parse_user_arguments():
         help="confusion set as comma-separated list of words")
     main.add_argument('-n', '--ngrams-prefix', type=str, required=True,
         help="prefix for files with list of n-grams")
-    main.add_argument('-l', '--levels', type=str, default='tok,awc',
+    main.add_argument('-l', '--levels', type=str, default='tok,pos,awc',
         help="levels of n-grams extraction as comma-separated list")
 
     train = parser.add_argument_group("training arguments")

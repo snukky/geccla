@@ -11,8 +11,9 @@ from logger import log
 
 def create_freq_file(cnfs_file, freq_file):
     log.info("counting frequencies...")
-    cmd.run("cat {} | sed 's/|||/\\t/g' | cut -f5 | tr ' ' '\\n' "
-        "| sort -S 1G --parallel 8 | uniq -c | sort -nr -S 1G --parallel 8 > {}".format(cnfs_file, freq_file))
+    cmd.run("cat {0} | sed 's/|||/\\t/g' | cut -f5 | tr ' ' '\\n' > {1}.unit".format(cnfs_file, freq_file))
+    cmd.run("sort -S 10G --parallel 8 {0}.unit > {0}.unit.sort".format(freq_file))
+    cmd.run("cat {0}.unit.sort | uniq -cd | sort -nr -S 10G --parallel 8 > {0}".format(freq_file))
 
 def create_feat_file(freq_file, feat_set, feat_file, 
                      min_feat_count=5, max_vec_size=500000):
@@ -38,7 +39,7 @@ def create_feat_file(freq_file, feat_set, feat_file,
     log.info("limit for features: {}".format(max_vec_size))
     log.info("active features: {}".format(cmd.wc(feat_file)))
 
-    feat_preds = cmd.run("cat {} | sed -r 's/(.*)=.*/\\1/' | sort -u -S 1G --parallel 8" \
+    feat_preds = cmd.run("cat {} | tr '=' '\\t' | cut -f1 | sort -u -S 10G --parallel 8" \
         .format(feat_file)).strip().split("\n")
 
     log.info("active feature predicates: {}".format(', '.join(feat_preds)))
@@ -50,7 +51,7 @@ def create_feat_file(freq_file, feat_set, feat_file,
     log.info("total number of nonactive predicates: {}".format(len(miss_feat_preds)))
 
     cmd.run("head -n {} {} | sed -r 's/ *[0-9]+ (.*)/\\1/' | grep -vP '{}' " \
-        " | sed -r 's/(.*)=.*/\\1/' | sort -u -S 1G --parallel 8 > {}" \
+        " | tr '=' '\\t' | cut -f1 | sort -u -S 1G --parallel 8 > {}" \
         .format(line_num, freq_file, regex, feat_file + '.skip'))
 
     skip_feat_preds = []

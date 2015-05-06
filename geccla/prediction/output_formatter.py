@@ -9,6 +9,7 @@ from prediction import iterate_text_confs_and_preds
 from prediction import get_best_prediction
 
 from preprocess.letter_case import restore_sentence_case
+from preprocess.artordets import restore_indef_articles_in_sent
 
 from confusion_set import ConfusionSet
 from logger import log
@@ -17,12 +18,15 @@ from logger import log
 def inject_predictions(conf_set, format, 
                        text_file, cnfs_file, pred_file,
                        threshold, difference,
-                       output_file):
+                       output_file,
+                       restore_articles=False):
 
     formatter = OutputFormatter(conf_set)
     with open(output_file, 'w+') as output:
         for line in formatter.text_output(text_file, cnfs_file, pred_file, 
                                           format, threshold, difference):
+            if restore_articles:
+                line = restore_indef_articles_in_sent(line)
             output.write(line + "\n")
 
 

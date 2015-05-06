@@ -6,6 +6,7 @@ import argparse
 
 from classification import FORMATS
 from prediction.output_formatter import OutputFormatter
+from preprocess.artordets import restore_indef_articles_in_sent
 
 
 def main():
@@ -15,8 +16,10 @@ def main():
     for line in frm.text_output(args.text_file, args.cnfs_file, args.pred_file, 
                                 args.format,
                                 args.threshold, args.difference):
-        print line
 
+        if args.restore_articles:
+            line = restore_indef_articles_in_sent(line)
+        print line
 
 def parse_user_arguments():
     parser = argparse.ArgumentParser(description="Injects classifier" \
@@ -39,6 +42,8 @@ def parse_user_arguments():
         help="minimum confidence difference between best and second"
         " classifier prediction") 
 
+    parser.add_argument('--restore-articles', action='store_true',
+        help="restore indefinite articles")
     parser.add_argument('--debug', action='store_true',
         help="run in verbose debug mode")
 

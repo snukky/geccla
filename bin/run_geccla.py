@@ -46,14 +46,13 @@ def main():
         log.info("TRAINING ON FILE: {}".format(args.train))
         train_file = cmd.base_filepath(args.work_dir, args.train)
         
-        #if args.artordet:
-            #normalize_indef_articles(args.train, train_file + '.txt')
-        #else:
-        cmd.ln(args.train, train_file + '.txt')
+        if args.nrm_articles:
+            log.info("normalizing indefinite articles: {}.txt".format(train_file))
+            normalize_indef_articles(args.train, train_file + '.txt')
+        else:
+            cmd.ln(args.train, train_file + '.txt')
 
-        if args.ngrams:
-            args.cnf_opts += " -n {}".format(args.ngrams)
-        #elif null_in_confset():
+        #if null_in_confset():
             #train_nulls(train_file)
             #args.cnf_opts += " -n {}.ngrams".format(train_file)
 
@@ -77,9 +76,11 @@ def main():
                 make_m2_parallel(run_file)
             else:
                 cmd.ln(run, run_file + '.txt')
-            #if args.artordets:
-                #shutil.move(run_file + '.txt', run_file + '.txt.nonrm')
-                #normalize_indef_articles(run_file + '.txt.nonrm', run_file + '.txt')
+
+            if args.nrm_articles:
+                log.info("normalizing indefinite articles: {}.txt".format(train_file))
+                shutil.move(run_file + '.txt', run_file + '.txt.nonrm')
+                normalize_indef_articles(run_file + '.txt.nonrm', run_file + '.txt')
 
             find_confusions(args.cnf_opts, run_file, parallel=args.eval)
             extract_features(run_file, args.ext_opts)
@@ -88,10 +89,7 @@ def main():
             vectorize_features(args.vec_opts, run_file)
             run_classifier(args.model, args.cls_opts, run_file)
 
-            inject_predictions(args.evl_opts, run_file)
-            #if args.artordet:
-                #shutil.move(run_file + '.out', run_file + '.out.nrm')
-                #restore_indef_articles(run_file + '.out.nrm', run_file + '.out')
+            inject_predictions(args.evl_opts, run_file, args.nrm_articles)
 
             if args.eval:
                 log.info("EVALUATING FILE: {}".format(run))
@@ -117,15 +115,11 @@ def main():
         vectorize_features(args.vec_opts, tune_file)
         run_classifier(args.model, args.cls_opts, tune_file)
 
-        inject_predictions('', tune_file)
-        #if args.artordet:
-            #shutil.move(tune_file + '.out', tune_file + '.out.nrm')
-            #restore_indef_articles(tune_file + '.out.nrm', tune_file + '.out')
+        inject_predictions('', tune_file, args.nrm_articles)
          
         log.info("GRID SEARCHING ON FILE: {}".format(args.tune))
-
         if args.m2:
-            new_evl_opts = run_m2_grid_search(tune_file)
+            new_evl_opts = run_m2_grid_search(tune_file, args.nrm_articles)
         else:
             new_evl_opts = run_grid_search(tune_file)
         
@@ -142,21 +136,19 @@ def main():
             evaluate_predictions(new_evl_opts, run_file + '.best')
 
             cmd.ln(run_file + '.in', run_file + '.best.in')
-            inject_predictions(new_evl_opts, run_file + '.best')
-            #if args.artordet:
-                #shutil.move(run_file + '.best.out', run_file + '.best.out.nrm')
-                #restore_indef_articles(run_file + '.best.out.nrm', run_file + '.best.out')
+            inject_predictions(new_evl_opts, run_file + '.best', args.nrm_articles)
 
             if args.m2:
                 cmd.ln(run_file + '.m2', run_file + '.best.m2')
                 evaluate_m2(run_file + '.best')
             
-    for run in args.run:
-        run_file = cmd.base_filepath(args.work_dir, run)
-        if args.eval:
-            log.info("\n" + cmd.run("cat {0}.eval".format(run_file)))
-        if args.tune:
-            log.info("\n" + cmd.run("cat {0}.best.eval".format(run_file)))
+    if args.run:
+        for run in args.run:
+            run_file = cmd.base_filepath(args.work_dir, run)
+            if args.eval:
+                log.info("\n" + cmd.run("cat {0}.eval".format(run_file)))
+            if args.tune:
+                log.info("\n" + cmd.run("cat {0}.best.eval".format(run_file)))
 
 
 def train_nulls(filepath):
@@ -259,15 +251,18 @@ def run_classifier(model, options, filepath):
         .format(root=config.ROOT_DIR, cs=CONFUSION_SET, alg=ALGORITHM,
                 opts=options, model=model, fp=filepath))
 
-def inject_predictions(options, filepath):
+def inject_predictions(options, filepath, nrm_articles=False):
     log.info("injecting predictions {0}.pred into {0}.in".format(filepath))
 
     if result_is_ready('{}.out'.format(filepath)):
         return
-
+    
     assert_file_exists(filepath + '.in')
     assert_file_exists(filepath + '.cnfs')
     assert_file_exists(filepath + '.pred')
+
+    if nrm_articles:
+        options += ' --restore-articles'
 
     cmd.run("{root}/inject_preds.py -c {cs} -f {frm} {opts} {fp}.in {fp}.cnfs {fp}.pred > {fp}.out" \
         .format(root=config.ROOT_DIR, cs=CONFUSION_SET, frm=FORMAT, 
@@ -313,7 +308,7 @@ def evaluate_m2(filepath):
     cmd.run("{root}/eval_m2.py {fp}.out {fp}.m2 >> {fp}.eval" \
         .format(root=config.ROOT_DIR, fp=filepath))
 
-def run_m2_grid_search(filepath):
+def run_m2_grid_search(filepath, nrm_articles=False):
     log.info("running CoNLL grid searching on {0}.pred and {0}.cnfs".format(filepath))
 
     if result_is_ready('{}.params'.format(filepath)):
@@ -324,9 +319,16 @@ def run_m2_grid_search(filepath):
     assert_file_exists(filepath + '.pred')
     assert_file_exists(filepath + '.m2')
 
-    output = cmd.run("{root}/tune_m2.py -c {cs} -f {frm} -g {fp}.eval.m2.grid -w {fp}.m2gs "
-        "--m2 {fp}.m2 {fp}.in {fp}.cnfs {fp}.pred" \
-        .format(root=config.ROOT_DIR, cs=CONFUSION_SET, frm=FORMAT, fp=filepath))
+    if nrm_articles:
+        options = ' --restore-articles'
+    else:
+        options = ''
+
+    output = cmd.run("{root}/tune_m2.py {opts} -c {cs} -f {frm} " \
+        "-g {fp}.eval.m2.grid -w {fp}.m2gs --m2 {fp}.m2 " \
+        "{fp}.in {fp}.cnfs {fp}.pred" \
+        .format(root=config.ROOT_DIR, cs=CONFUSION_SET, frm=FORMAT, 
+            opts=options, fp=filepath))
 
     thr, dif = output.split("\t")[:2]
     log.info("M^2 grid search found tunning options: t={} d={}".format(thr, dif))
@@ -381,8 +383,8 @@ def parse_user_arguments():
         help="prefix of ngram lists for finding confusion examples")
     extra.add_argument("--feature-set", type=str, choices=FEATURE_SETS.keys(),
         help="feature set")
-    extra.add_argument("--artordet", action='store_true',
-        help="heuristic article and determiner errors correction")
+    extra.add_argument("--nrm-articles", action='store_true',
+        help="normalization of indefinite articles")
 
     parser.add_argument("-t", "--train", type=str, 
         help="train classifier on parallel texts")
@@ -434,20 +436,12 @@ def parse_user_arguments():
     if args.m2 and not args.run:
         raise ArgumentError("argument --m2 requires --run")
 
+    if args.ngrams:
+        args.cnf_opts += " -n {}".format(args.ngrams)
+
     if args.feature_set:
         args.ext_opts += ' --feature-set {}'.format(args.feature_set)
         args.vec_opts += ' --feature-set {}'.format(args.feature_set)
-
-    if args.artordet:
-        args.confusion_set = 'a,the,'
-        args.cnf_opts = ' --artordet --levels 2'
-        if '--artordet' not in args.ext_opts:
-            args.ext_opts += ' --artordet'
-        if not args.vec_opts:
-            args.vec_opts = ' -s roz'
-
-    if args.artordet and args.ngrams:
-        raise ArgumentError("arguments --artordet and --ngrams are exclusive")
 
     log.debug(args)
     return args
