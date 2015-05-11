@@ -113,7 +113,7 @@ def map_tokens(toks1, toks2):
             step = (j2-j1) / float(i2-i1)
             mapping += [int(math.floor(j1 + x*step)) for x in xrange(i2-i1)]
         elif tag == 'delete':
-            mapping += [mapping[-1]] * i2-i1
+            mapping += [mapping[-1]] * (i2-i1)
         elif tag == 'insert':
             pass
         else:

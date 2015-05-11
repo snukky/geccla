@@ -13,7 +13,8 @@ def main():
     if args.artordet:
         extractor = ArtOrDetFeatures()
     else:
-        extractor = FeatureExtractor(feat_set=args.feature_set)
+        extractor = FeatureExtractor(feat_set=args.feature_set,
+                                     awc_dict=args.word_clusters)
     
     for conf in extractor.extract_features(args.input_file, args.cnfs_file):
         print format_conf(conf)
@@ -29,6 +30,8 @@ def parse_user_arguments():
         help="enable enhanced features for articles and determiners")
     parser.add_argument('-s', '--feature-set', type=str,
         help="set of predefined features")
+    parser.add_argument('-w', '--word-clusters', type=str,
+        help="path to file with word clusters")
     
     return parser.parse_args()
 

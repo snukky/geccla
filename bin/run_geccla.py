@@ -168,7 +168,7 @@ def find_confusions(options, filepath, parallel=False, confset=None):
     log.info("finding confusion examples from file: {}.txt".format(filepath))
 
     if not options:
-        options = " --levels pos,tok,awc"
+        options = ''
 
     if result_is_ready('{}.cnfs.empty'.format(filepath)):
         return
@@ -190,10 +190,13 @@ def find_confusions(options, filepath, parallel=False, confset=None):
             err_file = input_file
     else:
         cmd.ln(input_file, err_file)
+    
+    if ('-c ' not in options) and ('--confusion-set ' not in options):
+        options += ' -c {}'.format(CONFUSION_SET)
 
-    cmd.run("{root}/find_confs.py -c {cs} {opts} {err_file} > {fp}.cnfs.empty" \
-        .format(root=config.ROOT_DIR, cs=CONFUSION_SET, 
-                opts=options, err_file=err_file, fp=filepath))
+    cmd.run("{root}/find_confs.py {opts} {err_file} > {fp}.cnfs.empty" \
+        .format(root=config.ROOT_DIR, opts=options, err_file=err_file, 
+            fp=filepath))
 
     if parallel:
         cmd.wdiff(filepath + '.in', filepath + '.gold')
@@ -459,10 +462,10 @@ def load_setting_file(args):
             opt, val = line.strip().split('=')
 
             if opt == 'use' and not args.algorithm:
-                log.debug("setting algorithm: {}".format(val))
+                log.debug("loading algorithm: {}".format(val))
                 args.algorithm = val
             elif opt == 'set' and not args.confusion_set:
-                log.debug("confusion set: {}".format(val))
+                log.debug("loading confusion set: {}".format(val))
                 args.confusion_set = val
 
             elif opt == 'cnf' and not args.cnf_opts:

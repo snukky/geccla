@@ -15,7 +15,7 @@ class ConfusionSet:
         else:
             self.cs = self.__prepare_confusion_set(conf_set)
             self.non_nulls = [cw for cw in self.cs if cw != '<null>']
-            log.debug(self.__str__())
+            log.debug("init " + self.__str__())
 
 
     def include(self, word):

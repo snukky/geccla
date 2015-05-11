@@ -4,18 +4,14 @@ import re
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from confusion_set import ConfusionSet
-
-
-ARTORDET_CONFUSION_SET = ConfusionSet('a,the,')
-
 
 def normalize_indef_articles(text_file, nrm_file):
     nrm_io = open(nrm_file, 'w+')
     with open(text_file) as text_io:
         for line in text_io:
-            nrm_io.write(re.sub(r"\bAn\b", r"A", 
-                         re.sub(r"\ban\b", r"a", line)))
+            nrm_io.write(re.sub(r"\ban\b", r"A", 
+                         re.sub(r"\ban\b", r"a", 
+                         re.sub(r"\bAN\b", r"A", line))))
     nrm_io.close()
     return nrm_file
 

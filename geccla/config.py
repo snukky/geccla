@@ -12,7 +12,7 @@ class CLASSIFIERS:
     SNOW_BIN        = "/home/romang/tools/Snow_v3.2/snow"
     VW_BIN          = "/home/romang/tools/vowpal_wabbit/vowpalwabbit/vw"
     LIBLINEAR_DIR   = "/home/romang/tools/liblinear-ovo-1.94"
-    MAXENT_BIN      = "java -Xmx8192m -jar /home/romang/tools/stanford-classifier-2014-08-27/stanford-classifier.jar"
+    MAXENT_BIN      = "java -Xmx32768m -jar /home/romang/tools/stanford-classifier-2014-08-27/stanford-classifier.jar"
     BSVM_BIN        = "/home/romang/tools/bsvm-2.08"
 
 

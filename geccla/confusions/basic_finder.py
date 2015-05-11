@@ -9,10 +9,14 @@ from difflib import SequenceMatcher
 
 class BasicFinder():
 
-    def __init__(self, conf_set):
+    def __init__(self, conf_set, left_conf_set=None):
         self.confusion_set = ConfusionSet(conf_set) 
-
-    def find_confusion_words(self, corpus, greedy=True, nulls=False):
+        if left_conf_set:
+            self.left_conf_set = ConfusionSet(left_conf_set)
+        else:
+            self.left_conf_set = self.confusion_set
+        
+    def find_confusion_words(self, corpus, nulls=False):
         with open(corpus) as corpus_io:
             for s, line in enumerate(corpus_io):
                 err_toks, edits = self.parse_corpus_line(line)
@@ -21,14 +25,14 @@ class BasicFinder():
                 for i, err in enumerate(err_toks):
                     if (i,i+1) in edits:
                         cor = edits[(i,i+1)][1]
-                        if greedy or self.confusion_set.include(cor):
+                        if self.confusion_set.include(cor):
                             yield (s, i, i+1, err, cor)
                             added = True
-                    elif (i,i) in edits and (greedy or self.confusion_set.include_null()):
+                    elif (i,i) in edits and self.left_conf_set.include_null():
                         cor = edits[(i,i)][1]
                         yield (s, i, i, '<null>', cor)
                         added = False
-                    elif self.confusion_set.include(err):
+                    elif self.left_conf_set.include(err):
                         yield (s, i, i+1, err, err)
                         added = True
                     elif nulls and not added:
@@ -55,13 +59,13 @@ class BasicFinder():
             cor_tok = ' '.join(cor_toks[j1:j2])
             
             if tag == 'replace':
-                if self.confusion_set.include(err_tok) and self.confusion_set.include(cor_tok):
+                if self.left_conf_set.include(err_tok) and self.confusion_set.include(cor_tok):
                     edits[(i1, i2)] = (err_tok, cor_tok)
             elif tag == 'insert':
                 if self.confusion_set.include(cor_tok):
                     edits[(i1, i2)] = ('<null>', cor_tok)
             elif tag == 'delete':
-                if self.confusion_set.include(err_tok):
+                if self.left_conf_set.include(err_tok):
                     edits[(i1, i2)] = (err_tok, '<null>')
 
         return edits

@@ -110,7 +110,7 @@ class MultiClassifier():
 
     def __default_options(self, algorithm):
         if 'snow' == algorithm:
-            return " -P 0.001,2.0:0-{}".format(self.num_classes)
+            return " -P 0.001,2.0:0-{}".format(self.num_classes - 1)
         elif 'vw' == algorithm:
             return " --oaa {} --loss_function quantile".format(self.num_classes)
         elif 'liblinear' == algorithm:

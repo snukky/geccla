@@ -111,8 +111,9 @@ def parse_pred_file(pred_file, format, conf_set):
         with open(pred_file) as file:
             for line in file:
                 fields = line.strip().split()
-                answers = { fields[1]: float(fields[2].replace(',', '.')) }
-                predictions.append(answers) 
+                label = conf_set.num_label_to_word(fields[1], 1)
+                value = float(fields[2].replace(',', '.'))
+                predictions.append( {label: value} )
     
     elif 'bsvm' == format:
         with open(pred_file) as file:

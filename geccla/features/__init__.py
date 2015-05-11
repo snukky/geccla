@@ -112,6 +112,8 @@ sum_feature_sets('base', 'tok pos awc')
 
 sum_feature_sets('genpos', 'tok pos')
 sum_feature_sets('genawc', 'tok awc')
+sum_feature_sets('genposmix', 'tok pos mixtokpos')
+sum_feature_sets('genawcmix', 'tok awc mixtokawc')
 sum_feature_sets('genall', 'tok pos awc')
 sum_feature_sets('genmix', 'mixtokpos mixtokawc')
 sum_feature_sets('genallmix', 'tok pos awc mixtokpos mixtokawc')

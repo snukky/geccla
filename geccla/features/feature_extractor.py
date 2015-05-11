@@ -17,11 +17,11 @@ import itertools
 
 class FeatureExtractor():
     
-    def __init__(self, window=4, feat_set=None):
+    def __init__(self, window=5, feat_set=None, awc_dict=None):
         self.window = window
         self.feat_set = feat_set or 'base'
         self.pos_tagger = POSTagger()
-        self.wc_tagger = WCTagger()
+        self.wc_tagger = WCTagger(awc_dict)
 
     def extract_features(self, input_file, cnfs_file, feat_set=None):
         log.info("extracting features from file {} with feature set {}" \
@@ -60,8 +60,8 @@ class FeatureExtractor():
             features.update(self.__extract_ngrams(ii, jj, sb_awc_tags, 'c'))
         if 'mwpB1A1' in FEATURE_SETS[self.feat_set]:
             features.update(self.__extract_mixed_ngrams(ii, jj, sb_tokens, sb_pos_tags, 'mwp'))
-        if 'mcpB1A1' in FEATURE_SETS[self.feat_set]:
-            features.update(self.__extract_mixed_ngrams(ii, jj, sb_tokens, sb_awc_tags, 'mcp'))
+        if 'mwcB1A1' in FEATURE_SETS[self.feat_set]:
+            features.update(self.__extract_mixed_ngrams(ii, jj, sb_tokens, sb_awc_tags, 'mwc'))
 
         return features
         

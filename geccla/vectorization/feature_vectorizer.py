@@ -20,7 +20,7 @@ class FeatureVectorizer():
     def __init__(self, conf_set, 
                        feat_file=None, 
                        min_feat_count=5, 
-                       max_vec_size=500000):
+                       max_vec_size=750000):
 
         self.confusion_set = ConfusionSet(conf_set)
         self.min_feat_count = min_feat_count
@@ -63,7 +63,8 @@ class FeatureVectorizer():
         if os.path.exists(feat_file):
             log.info("file with features exists: {}".format(feat_file))
         else:
-            create_feat_file(freq_file, feat_set, feat_file)
+            create_feat_file(freq_file, feat_set, feat_file, 
+                             self.min_feat_count, self.max_vec_size)
 
         self.__read_feature_vector(feat_file)
         

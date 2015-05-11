@@ -85,7 +85,7 @@ def evaluate_m2(text_file, m2_file):
     # which cause the propagation of forked threads to this script.
     result = cmd.run("python {scr}/m2scorer_fork --forks {th} " \
         "--beta 0.5 --max_unchanged_words 3 {txt} {m2}" \
-        .format(scr=config.SCRIPTS_DIR, th=config.THREADS, 
+        .format(scr=config.SCRIPTS_DIR, th=config.THREADS * 2, 
                 txt=text_file, m2=m2_file))
 
     return tuple(float(line.split()[-1]) for line in result.strip().split("\n"))

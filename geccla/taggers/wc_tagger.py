@@ -43,12 +43,12 @@ class WordClassTagger:
         self.dic = {}
         with open(self.dictionary) as f:
             for line in f:
-                word, wc, _ = line.split()
-                self.dic[word] = wc
+                word, tag = line.split()[:2]
+                self.dic[word] = tag
                 if word.find('&apos;') != -1:
-                    self.dic[word.replace('&apos;', "'")] = wc
+                    self.dic[word.replace('&apos;', "'")] = tag
                 if word.find('&quot;') != -1:
-                    self.dic[word.replace('&quot;', '"')] = wc
+                    self.dic[word.replace('&quot;', '"')] = tag
 
 
 if __name__ == '__main__':
