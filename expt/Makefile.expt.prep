@@ -1,0 +1,138 @@
+include Makefile.data
+
+
+PREP_EVAL_FILES =  test2013.m2 test2014.m2 test2013.cs_prep.m2 test2013.cs_prep.greedy.m2 test2014.cs_prep.m2 test2014.cs_prep.greedy.m2
+
+GLOVE_CLUSTERS_200 = /home/romang/data/glove/glove.6B.c200.out
+GLOVE_CLUSTERS_1000 = /home/romang/data/glove/glove.6B.c1k.out
+GLOVE_CLUSTERS_200H = /home/romang/data/glove/glove.nucle.200.out
+GLOVE_CLUSTERS_1000H = /home/romang/data/glove/glove.nucle.1000.out
+
+
+# nucle
+prep.feature_sets: $(addprefix prep.liblinear.nucle,tok genpos genposmix genawc genawcmix genall genallmix)
+
+prep.liblinear.nucle.tok: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --feature-set tok'
+
+prep.liblinear.nucle.genpos: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --feature-set genpos'
+
+prep.liblinear.nucle.genposmix: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --feature-set genposmix'
+
+prep.liblinear.nucle.genawc: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --feature-set genawc'
+
+prep.liblinear.nucle.genawc-glove200: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --feature-set genawc --ext-opts " --word-clusters $(GLOVE_CLUSTERS_200)"'
+
+prep.liblinear.nucle.genawc-glove200h: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --feature-set genawc --ext-opts " --word-clusters $(GLOVE_CLUSTERS_200H)"'
+
+prep.liblinear.nucle.genawc-glove1000h: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --feature-set genawc --ext-opts " --word-clusters $(GLOVE_CLUSTERS_1000H)"'
+
+prep.liblinear.nucle.genawc-glove1000: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --feature-set genawc --ext-opts " --word-clusters $(GLOVE_CLUSTERS_1000)"'
+
+prep.liblinear.nucle.genawcmix: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --feature-set genawcmix'
+
+prep.liblinear.nucle.genall: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --feature-set genall'
+
+# nucle + lang8
+prep.lang8.feature_sets: $(addprefix prep.liblinear.lang8.,tok genpos genposmix genawc genawcmix genall genallmix)
+
+prep.liblinear.lang8.tok: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES) lang8.txt
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --more-data $(word 8,$^) --m2 \
+		--geccla ' --feature-set tok'
+
+prep.liblinear.lang8.genpos: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES) lang8.txt
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --more-data $(word 8,$^) --m2 \
+		--geccla ' --feature-set genpos'
+
+prep.liblinear.lang8.genposmix: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES) lang8.txt
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --more-data $(word 8,$^) --m2 \
+		--geccla ' --feature-set genposmix'
+
+prep.liblinear.lang8.genawc: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES) lang8.txt
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --more-data $(word 8,$^) --m2 \
+		--geccla ' --feature-set genawc'
+
+prep.liblinear.lang8.genawcmix: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES) lang8.txt
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --more-data $(word 8,$^) --m2 \
+		--geccla ' --feature-set genawcmix'
+
+prep.liblinear.lang8.genall: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES) lang8.txt
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --more-data $(word 8,$^) --m2 \
+		--geccla ' --feature-set genall'
+
+prep.liblinear.lang8.genawc-glove200h: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES) lang8.txt
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --more-data $(word 8,$^) --m2 \
+		--geccla ' --feature-set genawc --ext-opts " --word-clusters $(GLOVE_CLUSTERS_200H)"'
+
+# algorithms
+prep.vw.lang8.tok: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES) lang8.txt
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm vw \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --more-data $(word 8,$^) --m2 \
+		--geccla ' --feature-set tok'
+
+prep.snow.lang8.tok: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES) lang8.txt
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm snow \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --more-data $(word 8,$^) --m2 \
+		--geccla ' --feature-set tok'
+
+prep.maxent.lang8.tok: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES) lang8.txt
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm maxent \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --more-data $(word 8,$^) --m2 \
+		--geccla ' --feature-set tok'
+
+# error inference test
+prep.liblinear.lang8-er020.genawc+src: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES) lang8.txt
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 --more-data $(word 8,$^) \
+		--geccla ' --feature-set genawc+src --mng-opts " -e 0.20 --in-place"'
+
+prep.liblinear.lang8-er030.genawc+src: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES) lang8.txt
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 --more-data $(word 8,$^) \
+		--geccla ' --feature-set genawc+src --mng-opts " -e 0.30 --in-place"'
+
+prep.liblinear.lang8-er020.genawc: nucle.cs_prep.greedy.m2 $(PREP_EVAL_FILES) lang8.txt
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_PREPS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 --more-data $(word 8,$^) \
+		--geccla ' --feature-set genawc --mng-opts " -e 0.20 --in-place"'
+
+clean: 
+	rm -f *~
+
+.PHONY: clean prep.liblinear.lang8.tok prep.liblinear.lang8-er020.genawc prep.liblinear.lang8-er020.genawc+src prep.liblinear.lang8-er030.genawc+src

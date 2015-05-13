@@ -1,0 +1,27 @@
+include Makefile.data
+
+
+prep: prep.nucle+lang8.090.txt prep.nucle+lang8.090.allwords.txt
+
+prep.nucle.095.txt: nucle.txt
+	cat $^ | python $(GECCLA_DIR)/geccla/confusions/confset_generator.py -w $(CS_PREPS) -t 0.95 2> $@.stderr > $@
+prep.nucle.095.allwords.txt: nucle.txt
+	cat $^ | python $(GECCLA_DIR)/geccla/confusions/confset_generator.py -w $(CS_PREPS) -t 0.95 --allow-outside-words -f 0.03 2> $@.stderr > $@
+
+prep.nucle+lang8.090.txt: nucle+lang8.txt
+	cat $^ | python $(GECCLA_DIR)/geccla/confusions/confset_generator.py -w $(CS_PREPS) -t 0.90 2> $@.stderr > $@
+prep.nucle+lang8.090.allwords.txt: nucle+lang8.txt
+	cat $^ | python $(GECCLA_DIR)/geccla/confusions/confset_generator.py -w $(CS_PREPS) -t 0.90 --allow-outside-words -f 0.025 2> $@.stderr > $@
+
+
+artordet: artordet.nucle.095.txt artordet.nucle.095.allwords.txt
+
+artordet.nucle.095.txt: nucle.txt
+	cat $^ | python $(GECCLA_DIR)/geccla/confusions/confset_generator.py -w $(CS_ARTORDETS) -t 0.95 2> $@.stderr > $@
+artordet.nucle.095.allwords.txt: nucle.txt
+	cat $^ | python $(GECCLA_DIR)/geccla/confusions/confset_generator.py -w $(CS_ARTORDETS) -t 0.95 --allow-outside-words -f 0.02 2> $@.stderr > $@
+
+
+clean:
+	rm -f prep.* artordet.*
+

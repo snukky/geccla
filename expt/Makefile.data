@@ -10,13 +10,29 @@ CONLL_TEST2014_M2 = /home/romang/data/nucle/nucle.test2014.m2
 CONLL_TEST2013_5TYPES_M2 = /home/romang/data/nucle/nucle.test2013.5types.m2
 
 LANG8_NAIST = /home/romang/data/lang8/lang8-naist.nltktok.clean.txt
+LANG8_FULL = /home/romang/data/lang8/lang8-full.nltktok.clean.txt
+
 
 # CONSTANTS
-CS_ARTORDETS = a,an,the,
+CS_ARTORDETS_FULL = a,an,the,
+CS_ARTORDETS = a,the,
 CS_PREPS = on,from,for,of,about,to,at,in,with,by,
 
 
 ### TARGETS
+
+# LANG8 FULL + NUCLE
+nucle+lang8full.txt: nucle.txt lang8full.txt
+	cat $? > $@
+
+# LANG8 FULL
+lang8full.cor: lang8full.txt
+	cut -f2 $? > $@
+lang8full.err: lang8full.txt
+	cut -f1 $? > $@
+
+lang8full.txt: $(LANG8_FULL)
+	cat $? > $@
 
 # LANG8 NAIST + NUCLE
 nucle+lang8.txt: nucle.txt lang8.txt
@@ -41,18 +57,18 @@ test2014.ArtOrDet.m2:
 	cat $(CONLL_TEST2014_M2) | $(GECCLA_DIR)/scripts/filter_m2.py -p ArtOrDet -c > $@
 
 test2014.cs_artordet.m2: test2014.err test2014.0.cor test2014.1.cor
-	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS) -t artordet $^ > $@
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS_FULL) -t artordet $^ > $@
 test2014.cs_artordet.0.m2: test2014.err test2014.0.cor
-	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS) -t artordet $^ > $@
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS_FULL) -t artordet $^ > $@
 test2014.cs_artordet.1.m2: test2014.err test2014.1.cor
-	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS) -t artordet $^ > $@
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS_FULL) -t artordet $^ > $@
 
 test2014.cs_artordet.greedy.m2: test2014.err test2014.0.cor test2014.1.cor
-	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS) -t artordet --greedy $^ > $@
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS_FULL) -t artordet --greedy $^ > $@
 test2014.cs_artordet.0.greedy.m2: test2014.err test2014.0.cor
-	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS) -t artordet --greedy $^ > $@
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS_FULL) -t artordet --greedy $^ > $@
 test2014.cs_artordet.1.greedy.m2: test2014.err test2014.1.cor
-	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS) -t artordet --greedy $^ > $@
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS_FULL) -t artordet --greedy $^ > $@
 
 # TEST2014 Prep
 test2014.Prep.m2:
@@ -101,10 +117,10 @@ test2013.ArtOrDet.m2:
 	cat $(CONLL_TEST2013_M2) | $(GECCLA_DIR)/scripts/filter_m2.py -p ArtOrDet -c > $@
 
 test2013.cs_artordet.m2: test2013.err test2013.cor
-	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS) -t artordet $^ > $@
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS_FULL) -t artordet $^ > $@
 
 test2013.cs_artordet.greedy.m2: test2013.err test2013.cor
-	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS) -t artordet --greedy $^ > $@
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS_FULL) -t artordet --greedy $^ > $@
 
 # TEST2013 Prep
 test2013.Prep.m2:
@@ -155,10 +171,14 @@ nucle.025.m2: nucle.m2
 
 # NUCLE
 nucle.cs_artordet.m2: nucle.err nucle.cor
-	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS) -t artordet $^ > $@
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS_FULL) -t artordet $^ > $@
+nucle.cs_artordet.greedy.m2: nucle.err nucle.cor
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_ARTORDETS_FULL) -t artordet --greedy $^ > $@
 
 nucle.cs_prep.m2: nucle.err nucle.cor
 	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_PREPS) -t prep $^ > $@
+nucle.cs_prep.greedy.m2: nucle.err nucle.cor
+	$(GECCLA_DIR)/scripts/format_m2.py -c $(CS_PREPS) -t prep --greedy $^ > $@
 
 nucle.cor: nucle.txt
 	cut -f2 $? > $@

@@ -1,0 +1,20 @@
+# SETTINGS
+THREADS = 8
+PARALLEL = parallel --no-notice --pipe -k --block 5M -j $(THREADS)
+
+# DATA & DIRS
+CORPUS = /data/smt/models/CoNLL/MoErrors/out.filter.tok.lc.txt 
+
+GECCLA_SCRIPTS = /home/romang/scripts/geccla/scripts
+MOSES_SCRIPTS = /home/romang/mosesdecoder/scripts
+
+MOSES_DETOKENIZER = perl $(MOSES_SCRIPTS)/tokenizer/detokenizer.perl -l en
+NLTK_TOKENIZER = python $(GECCLA_SCRIPTS)/nltk-tok -l english
+
+
+# COMMONCRAWL CORPUS
+corpus.nltktok.lc.sb.txt: corpus.nltktok.lc.txt
+	cat $? | perl -ne 'chomp; print "<s> $$_ </s>\n"' > $@
+
+corpus.nltktok.lc.txt:
+	cat $(CORPUS) | $(PARALLEL) $(MOSES_DETOKENIZER) | $(PARALLEL) $(NLTK_TOKENIZER) > $@

@@ -1,0 +1,162 @@
+include Makefile.data
+
+SUBMISSIONS_DIR = /home/romang/data/nucle/official_submissions
+AMU_BEST = /data/smt/models/CoNLL/refmodels/L8-4M.CCLM.DENSE.nucle-mer.m2/release
+
+
+eval: artordet.2014 artordet.2013 prep.2014
+
+### ARTICLE AND DETERMINER ERRORS
+artordet.2013: AMU2013.artordet.eval gold2013.artordet.eval
+
+# AMU best on test2013
+AMU2013.artordet.eval: AMU2013.artordet.cor test2013.m2 test2013.cs_artordet.m2 test2013.cs_artordet.greedy.m2
+	python $(GECCLA_DIR)/geccla/eval_m2.py $^ > $@
+
+AMU2013.artordet.cor: AMU2013.txt test2013.err
+	python $(GECCLA_DIR)/scripts/filter_txt.py -c $(CS_ARTORDETS_FULL) $(word 1,$^) > $@
+	swdiff $(word 2,$^) $@ > $@.wdiff
+
+AMU2013.txt: test2013.err
+	paste $^ $(AMU_BEST)/test-final-2013.trans.mert.avg.cased.nltk > $@
+
+# gold 2013
+gold2013.artordet.eval: gold2013.artordet.cor test2013.m2 test2013.cs_artordet.m2 test2013.cs_artordet.greedy.m2
+	python $(GECCLA_DIR)/geccla/eval_m2.py $^ > $@
+
+gold2013.artordet.cor: test2013.txt test2013.err
+	python $(GECCLA_DIR)/scripts/filter_txt.py -c $(CS_ARTORDETS_FULL) $(word 1,$^) > $@
+	swdiff $(word 2,$^) $@ > $@.wdiff
+
+
+artordet.2014: CAMB.artordet.eval CUUI.artordet.eval AMU.artordet.eval AMUbest.artordet.eval gold2014.artordet.0.eval gold2014.artordet.1.eval
+
+# AMU best
+AMUbest.artordet.eval: AMUbest.artordet.cor test2014.m2 test2014.cs_artordet.m2 test2014.cs_artordet.greedy.m2
+	python $(GECCLA_DIR)/geccla/eval_m2.py $^ > $@
+
+AMUbest.artordet.cor: AMUbest.txt test2014.err
+	python $(GECCLA_DIR)/scripts/filter_txt.py -c $(CS_ARTORDETS_FULL) $(word 1,$^) > $@
+	swdiff $(word 2,$^) $@ > $@.wdiff
+
+AMUbest.txt: test2014.err
+	paste $^ $(AMU_BEST)/off-2014.trans.mert.avg.cased.nltk > $@
+
+# AMU
+AMU.artordet.eval: AMU.artordet.cor test2014.m2 test2014.cs_artordet.m2 test2014.cs_artordet.greedy.m2
+	python $(GECCLA_DIR)/geccla/eval_m2.py $^ > $@
+
+AMU.artordet.cor: AMU.txt test2014.err
+	python $(GECCLA_DIR)/scripts/filter_txt.py -c $(CS_ARTORDETS_FULL) $(word 1,$^) > $@
+	swdiff $(word 2,$^) $@ > $@.wdiff
+
+AMU.txt: test2014.err
+	paste $^ $(SUBMISSIONS_DIR)/AMU > $@
+
+# CUUI
+CUUI.artordet.eval: CUUI.artordet.cor test2014.m2 test2014.cs_artordet.m2 test2014.cs_artordet.greedy.m2
+	python $(GECCLA_DIR)/geccla/eval_m2.py $^ > $@
+
+CUUI.artordet.cor: CUUI.txt test2014.err
+	python $(GECCLA_DIR)/scripts/filter_txt.py -c $(CS_ARTORDETS_FULL) $(word 1,$^) > $@
+	swdiff $(word 2,$^) $@ > $@.wdiff
+
+CUUI.txt: test2014.err
+	paste $^ $(SUBMISSIONS_DIR)/CUUI > $@
+
+# CAMB
+CAMB.artordet.eval: CAMB.artordet.cor test2014.m2 test2014.cs_artordet.m2 test2014.cs_artordet.greedy.m2
+	python $(GECCLA_DIR)/geccla/eval_m2.py $^ > $@
+
+CAMB.artordet.cor: CAMB.txt test2014.err
+	python $(GECCLA_DIR)/scripts/filter_txt.py -c $(CS_ARTORDETS_FULL) $(word 1,$^) > $@
+	swdiff $(word 2,$^) $@ > $@.wdiff
+
+CAMB.txt: test2014.err
+	paste $^ $(SUBMISSIONS_DIR)/CAMB > $@
+
+# gold standard
+gold2014.artordet.1.eval: gold2014.artordet.1.cor test2014.m2 test2014.cs_artordet.m2 test2014.cs_artordet.greedy.m2
+	python $(GECCLA_DIR)/geccla/eval_m2.py $^ > $@
+
+gold2014.artordet.1.cor: test2014.1.txt test2014.err
+	python $(GECCLA_DIR)/scripts/filter_txt.py -c $(CS_ARTORDETS_FULL) $(word 1,$^) > $@
+	swdiff $(word 2,$^) $@ > $@.wdiff
+
+gold2014.artordet.0.eval: gold2014.artordet.0.cor test2014.m2 test2014.cs_artordet.m2 test2014.cs_artordet.greedy.m2
+	python $(GECCLA_DIR)/geccla/eval_m2.py $^ > $@
+
+gold2014.artordet.0.cor: test2014.0.txt test2014.err
+	python $(GECCLA_DIR)/scripts/filter_txt.py -c $(CS_ARTORDETS_FULL) $(word 1,$^) > $@
+	swdiff $(word 2,$^) $@ > $@.wdiff
+
+### PREPOSITION ERRORS
+prep.2014: CAMB.prep.eval CUUI.prep.eval AMU.prep.eval AMUbest.prep.eval gold2014.prep.0.eval gold2014.prep.1.eval gold2014.prep.0.greedy.eval gold2014.prep.1.greedy.eval
+
+# AMU best
+AMUbest.prep.eval: AMUbest.prep.cor test2014.m2 test2014.cs_prep.m2 test2014.cs_prep.greedy.m2
+	python $(GECCLA_DIR)/geccla/eval_m2.py $^ > $@
+
+AMUbest.prep.cor: AMUbest.txt test2014.err
+	python $(GECCLA_DIR)/scripts/filter_txt.py -c $(CS_PREPS) $(word 1,$^) > $@
+	swdiff $(word 2,$^) $@ > $@.wdiff
+
+# AMU
+AMU.prep.eval: AMU.prep.cor test2014.m2 test2014.cs_prep.m2 test2014.cs_prep.greedy.m2
+	python $(GECCLA_DIR)/geccla/eval_m2.py $^ > $@
+
+AMU.prep.cor: AMU.txt test2014.err
+	python $(GECCLA_DIR)/scripts/filter_txt.py -c $(CS_PREPS) $(word 1,$^) > $@
+	swdiff $(word 2,$^) $@ > $@.wdiff
+
+# CUUI
+CUUI.prep.eval: CUUI.prep.cor test2014.m2 test2014.cs_prep.m2 test2014.cs_prep.greedy.m2
+	python $(GECCLA_DIR)/geccla/eval_m2.py $^ > $@
+
+CUUI.prep.cor: CUUI.txt test2014.err
+	python $(GECCLA_DIR)/scripts/filter_txt.py -c $(CS_PREPS) $(word 1,$^) > $@
+	swdiff $(word 2,$^) $@ > $@.wdiff
+
+# CAMB
+CAMB.prep.eval: CAMB.prep.cor test2014.m2 test2014.cs_prep.m2 test2014.cs_prep.greedy.m2
+	python $(GECCLA_DIR)/geccla/eval_m2.py $^ > $@
+
+CAMB.prep.cor: CAMB.txt test2014.err
+	python $(GECCLA_DIR)/scripts/filter_txt.py -c $(CS_PREPS) $(word 1,$^) > $@
+	swdiff $(word 2,$^) $@ > $@.wdiff
+
+# gold standard
+gold2014.prep.0.eval: gold2014.prep.0.cor test2014.m2 test2014.cs_prep.m2 test2014.cs_prep.greedy.m2
+	python $(GECCLA_DIR)/geccla/eval_m2.py $^ > $@
+
+gold2014.prep.0.cor: test2014.0.txt test2014.err
+	python $(GECCLA_DIR)/scripts/filter_txt.py -c $(CS_PREPS) $(word 1,$^) > $@
+	swdiff $(word 2,$^) $@ > $@.wdiff
+
+gold2014.prep.0.greedy.eval: gold2014.prep.0.greedy.cor test2014.m2 test2014.cs_prep.m2 test2014.cs_prep.greedy.m2
+	python $(GECCLA_DIR)/geccla/eval_m2.py $^ > $@
+
+gold2014.prep.0.greedy.cor: test2014.0.txt test2014.err
+	python $(GECCLA_DIR)/scripts/filter_txt.py -c $(CS_PREPS) --greedy $(word 1,$^) > $@
+	swdiff $(word 2,$^) $@ > $@.wdiff
+
+gold2014.prep.1.eval: gold2014.prep.1.cor test2014.m2 test2014.cs_prep.m2 test2014.cs_prep.greedy.m2
+	python $(GECCLA_DIR)/geccla/eval_m2.py $^ > $@
+
+gold2014.prep.1.cor: test2014.1.txt test2014.err
+	python $(GECCLA_DIR)/scripts/filter_txt.py -c $(CS_PREPS) $(word 1,$^) > $@
+	swdiff $(word 2,$^) $@ > $@.wdiff
+
+gold2014.prep.1.greedy.eval: gold2014.prep.1.greedy.cor test2014.m2 test2014.cs_prep.m2 test2014.cs_prep.greedy.m2
+	python $(GECCLA_DIR)/geccla/eval_m2.py $^ > $@
+
+gold2014.prep.1.greedy.cor: test2014.1.txt test2014.err
+	python $(GECCLA_DIR)/scripts/filter_txt.py -c $(CS_PREPS) --greedy $(word 1,$^) > $@
+	swdiff $(word 2,$^) $@ > $@.wdiff
+
+
+# clean
+clean:
+	rm -f CUUI.* CAMB.* AMU* gold2013.* gold2014.*
+
+.PHONY: clean artordet.2013 artordet.2014 prep.2014

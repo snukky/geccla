@@ -1,0 +1,90 @@
+include Makefile.data
+include Makefile.bigdata
+
+
+ARTORDET_EVAL_FILES = test2013.m2 test2014.m2 test2013.cs_artordet.m2 test2013.cs_artordet.greedy.m2 test2014.cs_artordet.m2 test2014.cs_artordet.greedy.m2
+
+# features
+artordet.liblinear.nucle.tok: nucle.cs_artordet.greedy.m2 $(ARTORDET_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_ARTORDETS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --cnf-opts " --artordet" --feature-set tok --nrm-articles'
+
+artordet.liblinear.nucle.genpos: nucle.cs_artordet.greedy.m2 $(ARTORDET_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_ARTORDETS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --cnf-opts " --artordet" --feature-set genpos --nrm-articles'
+
+artordet.liblinear.nucle.genawc: nucle.cs_artordet.greedy.m2 $(ARTORDET_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_ARTORDETS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --cnf-opts " --artordet" --feature-set genawc --nrm-articles'
+
+artordet.liblinear.nucle.genposmix: nucle.cs_artordet.greedy.m2 $(ARTORDET_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_ARTORDETS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --cnf-opts " --artordet" --feature-set genposmix --nrm-articles'
+
+artordet.liblinear.nucle.genawcmix: nucle.cs_artordet.greedy.m2 $(ARTORDET_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_ARTORDETS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --cnf-opts " --artordet" --feature-set genawcmix --nrm-articles'
+
+artordet.liblinear.nucle.genall: nucle.cs_artordet.greedy.m2 $(ARTORDET_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_ARTORDETS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --cnf-opts " --artordet" --feature-set genall --nrm-articles'
+
+
+# null detection
+artordet.liblinear.nucle.genawc-allspaces: nucle.cs_artordet.greedy.m2 $(ARTORDET_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_ARTORDETS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --cnf-opts " --all-spaces-as-nulls" --feature-set genawc --nrm-articles'
+
+artordet.liblinear.nucle.genawc-chunk: nucle.cs_artordet.greedy.m2 $(ARTORDET_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_ARTORDETS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --cnf-opts " --artordet" --feature-set genawc --nrm-articles'
+
+artordet.liblinear.lang8.genawc-chunk: nucle.cs_artordet.greedy.m2 $(ARTORDET_EVAL_FILES) lang8.txt
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_ARTORDETS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 --more-data $(word 8,$^) \
+		--geccla ' --cnf-opts " --artordet" --feature-set genawc --nrm-articles'
+
+artordet.liblinear.nucle.genawc-ngrams50: nucle.cs_artordet.greedy.m2 $(ARTORDET_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_ARTORDETS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --ngrams ccrawl.ngrams --cnf-opts " --min-count 50" --feature-set genawc --nrm-articles'
+
+artordet.liblinear.nucle.genawc-ngrams200: nucle.cs_artordet.greedy.m2 $(ARTORDET_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_ARTORDETS) --algorithm liblinear \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --ngrams ccrawl.ngrams --cnf-opts " --min-count 200" --feature-set genawc --nrm-articles'
+
+# algorithms
+artordet.snow.nucle.genawc: nucle.cs_artordet.greedy.m2 $(ARTORDET_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_ARTORDETS) --algorithm snow \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --cnf-opts " --artordet" --feature-set genawc --nrm-articles'
+
+artordet.vw.nucle.genawc: nucle.cs_artordet.greedy.m2 $(ARTORDET_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_ARTORDETS) --algorithm vw \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --cnf-opts " --artordet" --feature-set genawc --nrm-articles'
+
+artordet.maxent.nucle.genawc: nucle.cs_artordet.greedy.m2 $(ARTORDET_EVAL_FILES)
+	$(GECCLA_DIR)/bin/run_cross.py --work-dir $@ --confusion-set $(CS_ARTORDETS) --algorithm maxent \
+		--data $(word 1,$^) --eval $(wordlist 2,7,$^) --m2 \
+		--geccla ' --cnf-opts " --artordet" --feature-set genawc --nrm-articles'
+
+
+# DATA
+ccrawl.ngrams.*: corpus.nltktok.lc.sb.txt
+	python $(GECCLA_DIR)/geccla/train_nulls.py -c $(CS_ARTORDETS) -l tok,pos,awc -n ccrawl.ngrams $?
+
+
+clean: 
+	rm -f *~
+
+.PHONY: clean
