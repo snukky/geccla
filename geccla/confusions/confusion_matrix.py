@@ -27,7 +27,7 @@ class ConfusionMatrix():
         print "all      :", num_of_edits
         print "AA edits :", self.num_of_AA_edits()
         print "AB edits :", self.num_of_AB_edits()
-        print "ER       : %.3f %%" % self.error_rate()
+        print "ER       : %.2f %%" % (self.error_rate() * 100)
     
     def print_matrix(self, format_func=lambda x: str(x)):
         print "\t |", "\t".join(self.confusion_set.as_list())
@@ -50,7 +50,7 @@ class ConfusionMatrix():
         return self.num_of_edits() - self.num_of_AA_edits()
     
     def error_rate(self):
-        return self.num_of_AB_edits() / float(self.num_of_edits()) * 100
+        return self.num_of_AB_edits() / float(self.num_of_edits())
 
     def __build_matrix(self, cnfs_file):
         output = cmd.run("cat {} | tr -s '|||' '\\t' | cut -f3,4" \

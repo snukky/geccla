@@ -89,13 +89,13 @@ def create_train_files(filepath, part, num_of_parts, more_data=None):
     if result_is_ready('{}.{}.train.txt'.format(filepath, part)):
         return
 
+    if more_data:
+        cmd.run("cat {} >> {}.{}.train.txt".format(more_data, filepath, part))
+
     train_files = ' '.join(["{}.{}.txt".format(filepath, p) 
                             for p in format_parts(num_of_parts) 
                             if p != part])
-
-    cmd.run("cat {} > {}.{}.train.txt".format(train_files, filepath, part))
-    if more_data:
-        cmd.run("cat {} >> {}.{}.train.txt".format(more_data, filepath, part))
+    cmd.run("cat {} >> {}.{}.train.txt".format(train_files, filepath, part))
 
 
 def train_cross(crosspath, algorithm, confset, m2, options):
@@ -137,14 +137,14 @@ def create_train_file(train_file, data, more_data, m2):
     if result_is_ready(train_file):
         return 
 
-    if m2:
-        cmd.run("cat {data} | perl {root}/make_parallel.perl > {out}" \
-            .format(root=config.SCRIPTS_DIR, data=data, out=train_file))
-    else:
-        cmd.run("cat {data} > {out}".format(data=data, out=train_file))
-
     if more_data:
         cmd.run("cat {data} >> {out}".format(data=more_data, out=train_file))
+
+    if m2:
+        cmd.run("cat {data} | perl {root}/make_parallel.perl >> {out}" \
+            .format(root=config.SCRIPTS_DIR, data=data, out=train_file))
+    else:
+        cmd.run("cat {data} >> {out}".format(data=data, out=train_file))
 
 def train_geccla(release_dir, train_file, algorithm, confset, options):
     if result_is_ready('{}/output.train'.format(release_dir)):

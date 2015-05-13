@@ -52,12 +52,16 @@ class FeatureExtractor():
 
         features = OrderedDict()
 
+        if 'src' in FEATURE_SETS[self.feat_set]:
+            features['src'] = ' '.join(tokens[i:j]).lower()
+
         if 'wB1A1' in FEATURE_SETS[self.feat_set]:
             features.update(self.__extract_ngrams(ii, jj, sb_tokens, 'w'))
         if 'pB1A1' in FEATURE_SETS[self.feat_set]:
             features.update(self.__extract_ngrams(ii, jj, sb_pos_tags, 'p'))
         if 'cB1A1' in FEATURE_SETS[self.feat_set]:
             features.update(self.__extract_ngrams(ii, jj, sb_awc_tags, 'c'))
+
         if 'mwpB1A1' in FEATURE_SETS[self.feat_set]:
             features.update(self.__extract_mixed_ngrams(ii, jj, sb_tokens, sb_pos_tags, 'mwp'))
         if 'mwcB1A1' in FEATURE_SETS[self.feat_set]:

@@ -57,9 +57,9 @@ def main():
             #args.cnf_opts += " -n {}.ngrams".format(train_file)
 
         find_confusions(args.cnf_opts, train_file, parallel=True)
+        print_confusion_statistics(train_file, args.mng_opts)
         extract_features(train_file, args.ext_opts)
         
-        print_confusion_statistics(train_file)
         vectorize_features(args.vec_opts, train_file)
         train_classifier(args.model, args.cls_opts, train_file)
 
@@ -83,9 +83,9 @@ def main():
                 normalize_indef_articles(run_file + '.txt.nonrm', run_file + '.txt')
 
             find_confusions(args.cnf_opts, run_file, parallel=args.eval)
+            print_confusion_statistics(run_file)
             extract_features(run_file, args.ext_opts)
 
-            print_confusion_statistics(run_file)
             vectorize_features(args.vec_opts, run_file)
             run_classifier(args.model, args.cls_opts, run_file)
 
@@ -109,9 +109,9 @@ def main():
             cmd.ln(args.tune, tune_file + '.txt')
 
         find_confusions(args.cnf_opts, tune_file, parallel=True)
+        print_confusion_statistics(tune_file)
         extract_features(tune_file, args.ext_opts)
 
-        print_confusion_statistics(tune_file)
         vectorize_features(args.vec_opts, tune_file)
         run_classifier(args.model, args.cls_opts, tune_file)
 
@@ -212,9 +212,10 @@ def extract_features(filepath, options=''):
     cmd.run("{root}/extract_feats.py {opts} {fp}.in {fp}.cnfs.empty > {fp}.cnfs" \
         .format(root=config.ROOT_DIR, opts=options, fp=filepath))
 
-def print_confusion_statistics(filepath):
-    stats = cmd.run("{root}/manage_confs.py {fp}.cnfs" \
-        .format(root=config.ROOT_DIR, cs=CONFUSION_SET, fp=filepath))
+def print_confusion_statistics(filepath, options=''):
+    stats = cmd.run("{root}/manage_confs.py {opts} {fp}.cnfs.empty" \
+        .format(root=config.ROOT_DIR, cs=CONFUSION_SET, 
+                opts=options, fp=filepath))
     log.info("training data statistics:\n{}".format(stats))
 
 def vectorize_features(options, filepath):
@@ -403,6 +404,8 @@ def parse_user_arguments():
     opts = parser.add_argument_group("external scripts' arguments")
     opts.add_argument("--cnf-opts", type=str, default='',
         help="options for finding confusions")
+    opts.add_argument("--mng-opts", type=str, default='',
+        help="options for managing found confusions")
     opts.add_argument("--ext-opts", type=str, default='',
         help="options for feature extraction")
     opts.add_argument("--vec-opts", type=str, default='', 
@@ -471,6 +474,9 @@ def load_setting_file(args):
             elif opt == 'cnf' and not args.cnf_opts:
                 log.debug("loading confusion extraction options: {}".format(val))
                 args.cnf_opts = val
+            elif opt == 'mng' and not args.mng_opts:
+                log.debug("loading confusion managing options: {}".format(val))
+                args.mng_opts = val
             elif opt == 'ext' and not args.ext_opts:
                 log.debug("loading feature extraction options: {}".format(val))
                 args.ext_opts = val
@@ -496,6 +502,7 @@ def create_setting_file(args):
         file.write("use={}\n".format(args.algorithm))
         file.write("set={}\n".format(args.confusion_set))
         file.write("cnf={}\n".format(args.cnf_opts.strip()))
+        file.write("mng={}\n".format(args.mng_opts.strip()))
         file.write("ext={}\n".format(args.ext_opts.strip()))
         file.write("vec={}\n".format(args.vec_opts.strip()))
         file.write("cls={}\n".format(args.cls_opts.strip()))

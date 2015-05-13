@@ -118,6 +118,9 @@ sum_feature_sets('genall', 'tok pos awc')
 sum_feature_sets('genmix', 'mixtokpos mixtokawc')
 sum_feature_sets('genallmix', 'tok pos awc mixtokpos mixtokawc')
 
+sum_feature_sets('genpos+src', 'tok pos src')
+sum_feature_sets('genawc+src', 'tok awc src')
+
 compose_feature_set('wordsBeforeNP', 'wB', 'NP1')
 compose_feature_set('Preposition', 'prep', 'NP1')
 compose_feature_set('Verb', 'verb', 'NP1', extra=['verb'])
