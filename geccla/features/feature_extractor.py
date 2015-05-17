@@ -20,51 +20,60 @@ class FeatureExtractor():
     def __init__(self, window=5, feat_set=None, awc_dict=None):
         self.window = window
         self.feat_set = feat_set or 'base'
-        self.pos_tagger = POSTagger()
-        self.wc_tagger = WCTagger(awc_dict)
 
-    def extract_features(self, input_file, cnfs_file, feat_set=None):
+        self.pos_tagger = None
+        if self.__active_feats('pB1A1', 'mwpB1A1'):
+            self.pos_tagger = POSTagger()
+
+        self.wc_tagger = None
+        if self.__active_feats('cB1A1', 'mwcB1A1'):
+            self.wc_tagger = WCTagger(awc_dict)
+
+    def extract_features(self, input_file, cnfs_file):
         log.info("extracting features from file {} with feature set {}" \
-            .format(input_file, feat_set))
+            .format(input_file, self.feat_set))
 
-        pos_io = open(self.pos_tagger.tag_file(input_file))
-        awc_io = open(self.wc_tagger.tag_file(input_file))
+        pos_io = open(self.pos_tagger.tag_file(input_file)) if self.pos_tagger else None
+        awc_io = open(self.wc_tagger.tag_file(input_file)) if self.wc_tagger else None
 
         for s, cnfs, text in iterate_text_and_confs(input_file, cnfs_file):
             tokens = text.strip().lower().split()
-            pos_tags = pos_io.next().strip().split()
-            awc_tags = awc_io.next().strip().split()
+
+            pos_tags = pos_io.next().strip().split() if pos_io else None
+            awc_tags = awc_io.next().strip().split() if awc_io else None
             
             for i, j, err, cor, _ in cnfs:
                 features = self.extract_features_for_example(i, j, tokens,
                     pos_tags, awc_tags)
                 yield (s, i, j, err, cor, features)
-        
-        pos_io.close()
-        awc_io.close()
+
+        if pos_io:
+            pos_io.close()
+        if awc_io:
+            awc_io.close()
 
     def extract_features_for_example(self, i, j, tokens, pos_tags, awc_tags):
         sb_tokens = self.__add_boundaries(tokens)
-        sb_pos_tags = self.__add_boundaries(pos_tags)
-        sb_awc_tags = self.__add_boundaries(awc_tags)
+        sb_pos_tags = self.__add_boundaries(pos_tags) if pos_tags else None
+        sb_awc_tags = self.__add_boundaries(awc_tags) if awc_tags else None
 
         ii, jj = i + self.window, j + self.window
 
         features = OrderedDict()
 
-        if 'src' in FEATURE_SETS[self.feat_set]:
+        if self.__active_feats('src'):
             features['src'] = ' '.join(tokens[i:j]).lower()
 
-        if 'wB1A1' in FEATURE_SETS[self.feat_set]:
+        if self.__active_feats('wB1A1'):
             features.update(self.__extract_ngrams(ii, jj, sb_tokens, 'w'))
-        if 'pB1A1' in FEATURE_SETS[self.feat_set]:
+        if self.__active_feats('pB1A1'):
             features.update(self.__extract_ngrams(ii, jj, sb_pos_tags, 'p'))
-        if 'cB1A1' in FEATURE_SETS[self.feat_set]:
+        if self.__active_feats('cB1A1'):
             features.update(self.__extract_ngrams(ii, jj, sb_awc_tags, 'c'))
 
-        if 'mwpB1A1' in FEATURE_SETS[self.feat_set]:
+        if self.__active_feats('mwpB1A1'):
             features.update(self.__extract_mixed_ngrams(ii, jj, sb_tokens, sb_pos_tags, 'mwp'))
-        if 'mwcB1A1' in FEATURE_SETS[self.feat_set]:
+        if self.__active_feats('mwcB1A1'):
             features.update(self.__extract_mixed_ngrams(ii, jj, sb_tokens, sb_awc_tags, 'mwc'))
 
         return features
@@ -111,3 +120,6 @@ class FeatureExtractor():
     
     def __add_boundaries(self, tokens):
         return ['<s>'] * self.window + tokens + ['</s>'] * self.window
+
+    def __active_feats(self, *feats):
+        return any(feat in FEATURE_SETS[self.feat_set] for feat in list(feats))

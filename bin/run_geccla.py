@@ -103,7 +103,11 @@ def main():
         tune_file = cmd.base_filepath(args.work_dir, args.tune)
 
         if args.m2:
-            cmd.ln(args.tune, tune_file + '.m2')
+            if args.tune_ann_rate:
+                cmd.run("{root}/../scripts/change_annorate_m2.py -e {er} {m2} > {fp}.m2" \
+                    .format(root=config.ROOT_DIR, er=args.tune_ann_rate, m2=args.tune, fp=tune_file))
+            else:
+                cmd.ln(args.tune, tune_file + '.m2')
             make_m2_parallel(tune_file)
         else:
             cmd.ln(args.tune, tune_file + '.txt')
@@ -389,6 +393,8 @@ def parse_user_arguments():
         help="feature set")
     extra.add_argument("--nrm-articles", action='store_true',
         help="normalization of indefinite articles")
+    extra.add_argument("--tune-ann-rate", type=float,
+        help="change error rate in M2 file during tuning")
 
     parser.add_argument("-t", "--train", type=str, 
         help="train classifier on parallel texts")

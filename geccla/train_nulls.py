@@ -7,7 +7,7 @@ from confusions.null_finder import NullFinder
 
 def main():
     args = parse_user_arguments()
-    finder = NullFinder(args.confusion_set, not args.no_clean)
+    finder = NullFinder(args.confusion_set, not args.no_clean, args.awc_dict)
 
     finder.train_ngrams(args.input_file, args.ngrams_prefix, 
                         args.left_context, args.right_context, 
@@ -27,6 +27,8 @@ def parse_user_arguments():
         help="prefix for files with list of n-grams")
     main.add_argument('-l', '--levels', type=str, default='tok,pos,awc',
         help="levels of n-grams extraction as comma-separated list")
+    main.add_argument('--awc-dict', type=str,
+        help="path to file with automatic word clusters")
 
     train = parser.add_argument_group("training arguments")
     train.add_argument('--min-count', type=int, default=5,

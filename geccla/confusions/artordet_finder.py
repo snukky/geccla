@@ -17,8 +17,10 @@ class ArtOrDetFinder(BasicFinder):
 
     LEVELS = [1, 2, 3, '1', '2', '3']
 
-    def __init__(self):
-        BasicFinder.__init__(self, 'a,the,')
+    def __init__(self, conf_set=None):
+        if not conf_set:
+            conf_set = 'a,the,'
+        BasicFinder.__init__(self, conf_set)
         self.chunker = LBJChunker()
 
     def find_confusion_artordets(self, corpus, level=2):

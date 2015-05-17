@@ -17,10 +17,10 @@ def main():
     args = parse_user_arguments()
     
     if args.artordet:
-        finder = ArtOrDetFinder()
+        finder = ArtOrDetFinder(args.confusion_set)
         confs = finder.find_confusion_artordets(args.input_file, args.levels)
     elif args.ngrams_prefix:
-        finder = NullFinder(args.confusion_set)
+        finder = NullFinder(args.confusion_set, awc_dict=args.awc_dict)
         confs = finder.find_confusion_nulls(args.input_file, 
                                             args.ngrams_prefix,
                                             args.levels,
@@ -59,6 +59,8 @@ def parse_user_arguments():
         help="do not add <null> examples if not in confusion set")
     parser.add_argument('--all-spaces-as-nulls', action='store_true',
         help="extract all spaces as <null> examples")
+    parser.add_argument('--awc-dict', type=str,
+        help="path to file with automatic word clusters")
     
     args = parser.parse_args()
 

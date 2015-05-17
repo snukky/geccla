@@ -51,8 +51,9 @@ def main():
     if args.detection_task:
         print "# Detection task:"
         print "Accuracy    : %.4f" % metrics.accuracy(tp + xyz, tn, fp, fn)
-        print "Specificity : %.4f" % metrics.specificity(tp + xyz, tn, fp, fn)
-        print "Fall-out    : %.4f" % metrics.fall_out(tp + xyz, tn, fp, fn)
+        if args.all:
+            print "Specificity : %.4f" % metrics.specificity(tp + xyz, tn, fp, fn)
+            print "Fall-out    : %.4f" % metrics.fall_out(tp + xyz, tn, fp, fn)
         print "Precision   : %.4f" % metrics.precision(tp + xyz, tn, fp, fn)
         print "Recall      : %.4f" % metrics.recall(tp + xyz, tn, fp, fn)
         print "F0.5        : %.4f" % metrics.fscore(tp + xyz, tn, fp, fn)
@@ -60,8 +61,9 @@ def main():
     
     print "# Correction task:"
     print "Accuracy    : %.4f" % metrics.accuracy(tp, tn, fp + xyz, fn)
-    print "Specificity : %.4f" % metrics.specificity(tp, tn, fp + xyz, fn)
-    print "Fall-out    : %.4f" % metrics.fall_out(tp, tn, fp + xyz, fn)
+    if args.all:
+        print "Specificity : %.4f" % metrics.specificity(tp, tn, fp + xyz, fn)
+        print "Fall-out    : %.4f" % metrics.fall_out(tp, tn, fp + xyz, fn)
     print "Precision   : %.4f" % metrics.precision(tp, tn, fp + xyz, fn)
     print "Recall      : %.4f" % metrics.recall(tp, tn, fp + xyz, fn)
     print "F0.5        : %.4f" % metrics.fscore(tp, tn, fp + xyz, fn)

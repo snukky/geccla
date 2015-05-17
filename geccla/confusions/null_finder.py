@@ -19,7 +19,7 @@ class NullFinder(BasicFinder):
     
     LEVELS = 'tok pos awc'.split()
 
-    def __init__(self, conf_set, clean=False):
+    def __init__(self, conf_set, clean=False, awc_dict=None):
         BasicFinder.__init__(self, conf_set)
 
         self.left_context = None
@@ -27,6 +27,9 @@ class NullFinder(BasicFinder):
 
         self.pos_tagger = None
         self.wc_tagger = None
+        if awc_dict:
+            self.wc_tagger = WCTagger(awc_dict)
+
         self.ngrams = {}
         self.__clean = clean
 
@@ -152,12 +155,14 @@ class NullFinder(BasicFinder):
         if 'tok' in levels:
             files['tok'] = input
         if 'pos' in levels:
-            pos_tagger = POSTagger()
-            pos_tagger.tag_file(input, input + '.pos')
+            if self.pos_tagger is None:
+                self.pos_tagger = POSTagger()
+            self.pos_tagger.tag_file(input, input + '.pos')
             files['pos'] = input + '.pos'
         if 'awc' in levels:
-            awc_tagger = WCTagger()
-            awc_tagger.tag_file(input, input + '.awc')
+            if self.wc_tagger is None:
+                self.wc_tagger = WCTagger()
+            self.wc_tagger.tag_file(input, input + '.awc')
             files['awc'] = input + '.awc'
 
         return files
