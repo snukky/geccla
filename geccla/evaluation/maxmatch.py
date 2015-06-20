@@ -75,7 +75,8 @@ def run_m2_grid_search(conf_set, format,
 
 def evaluate_m2(text_file, m2_file):
     num_of_lines = cmd.wc(text_file)
-    num_of_sents = int(cmd.run("grep -c '^S ' {}".format(m2_file)).strip())
+    with open(m2_file) as m2_io:
+        num_of_sents = sum(1 for line in m2_io if line.startswith("S "))
 
     if num_of_lines != num_of_sents:
         log.error("Input file and M2 file differ in number of sentences: "
@@ -83,9 +84,12 @@ def evaluate_m2(text_file, m2_file):
     
     # Scorer is run by system shell because of the bug inside the scorer script
     # which cause the propagation of forked threads to this script.
-    result = cmd.run("python {scr}/m2scorer_fork --forks {th} " \
-        "--beta 0.5 --max_unchanged_words 3 {txt} {m2}" \
-        .format(scr=config.SCRIPTS_DIR, th=config.THREADS * 2, 
-                txt=text_file, m2=m2_file))
+    #result = cmd.run("python {scr}/m2scorer_fork --forks {th} {txt} {m2}" \
+        #.format(scr=config.SCRIPTS_DIR, th=config.THREADS * 2, 
+                #txt=text_file, m2=m2_file))
+
+    # Currently I'm using Marcin's C++ implementation of m2scorer.
+    result = cmd.run("{scorer} --candidate {txt} --reference {m2}" \
+        .format(scorer=config.TOOLS.M2SCORER_CPP, txt=text_file, m2=m2_file))
 
     return tuple(float(line.split()[-1]) for line in result.strip().split("\n"))

@@ -6,18 +6,22 @@ sys.path.insert(0, os.path.dirname(__file__))
 from confusion_set import ConfusionSet
 from difflib import SequenceMatcher
 
+from logger import log
+
 
 class BasicFinder():
 
-    def __init__(self, conf_set, left_conf_set=None):
+    def __init__(self, conf_set, left_conf_set=None, train_mode=False):
         self.confusion_set = ConfusionSet(conf_set) 
         if left_conf_set:
             self.left_conf_set = ConfusionSet(left_conf_set)
         else:
             self.left_conf_set = self.confusion_set
+        self.train_mode = train_mode
         
-    def find_confusion_words(self, corpus, nulls=False):
+    def find_confusion_words(self, corpus, all_nulls=False):
         with open(corpus) as corpus_io:
+            count = 0
             for s, line in enumerate(corpus_io):
                 err_toks, edits = self.parse_corpus_line(line)
                 added = False
@@ -27,19 +31,24 @@ class BasicFinder():
                         cor = edits[(i,i+1)][1]
                         if self.confusion_set.include(cor):
                             yield (s, i, i+1, err, cor)
+                            count += 1
                             added = True
-                    elif (i,i) in edits and self.left_conf_set.include_null():
+                    elif (i,i) in edits and self.left_conf_set.include_null() and self.train_mode:
                         cor = edits[(i,i)][1]
                         yield (s, i, i, '<null>', cor)
+                        count += 1
                         added = False
                     elif self.left_conf_set.include(err):
                         yield (s, i, i+1, err, err)
+                        count += 1
                         added = True
-                    elif nulls and not added:
+                    elif all_nulls and not added:
                         yield (s, i, i, '<null>', '<null>')
+                        count += 1
                         added = False
                     else:
                         added = False
+            log.info("found {} examples of confusion words".format(count))
 
     def parse_corpus_line(self, line):
         if "\t" in line:

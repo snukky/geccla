@@ -24,10 +24,20 @@ class ConfusionMatrix():
         num_of_edits = self.num_of_edits()
         self.print_matrix(lambda x: "%.2f" % (x / float(num_of_edits) * 100))
     
-        print "all      :", num_of_edits
-        print "AA edits :", self.num_of_AA_edits()
-        print "AB edits :", self.num_of_AB_edits()
-        print "ER       : %.2f %%" % (self.error_rate() * 100)
+        print "all        :", num_of_edits
+        print "AA edits   :", self.num_of_AA_edits()
+        ab_count = self.num_of_AB_edits()
+        print "AB edits   :", ab_count 
+        ins_count = self.num_of_insertions()
+        ins_rate = ins_count / float(ab_count)
+        print "insertions : %i \t(%.2f %%)" % (ins_count, ins_rate * 100)
+        del_count = self.num_of_deletions()
+        del_rate = del_count / float(ab_count)
+        print "deletions  : %i \t(%.2f %%)" % (del_count, del_rate * 100)
+        sub_count = ab_count - ins_count - del_count
+        sub_rate = 1.0 - ins_rate - del_rate
+        print "substit.   : %i \t(%.2f %%)" % (sub_count, sub_rate * 100)
+        print "ER         : %.2f %%" % (self.error_rate() * 100)
     
     def print_matrix(self, format_func=lambda x: str(x)):
         print "\t |", "\t".join(self.confusion_set.as_list())
@@ -48,6 +58,16 @@ class ConfusionMatrix():
 
     def num_of_AB_edits(self):
         return self.num_of_edits() - self.num_of_AA_edits()
+
+    def num_of_insertions(self):
+        if not self.confusion_set.include_null():
+            return 0
+        return sum(self.matrix['<null>'][word] for word in self.confusion_set)
+
+    def num_of_deletions(self):
+        if not self.confusion_set.include_null():
+            return 0
+        return sum(self.matrix[word]['<null>'] for word in self.confusion_set)
     
     def error_rate(self):
         return self.num_of_AB_edits() / float(self.num_of_edits())

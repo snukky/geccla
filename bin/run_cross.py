@@ -24,6 +24,16 @@ def main():
         os.makedirs(args.work_dir)
     log.info("working directory: {}".format(args.work_dir))
 
+    if args.m2 and args.ann_rate:
+        log.info("CHANGING ERROR RATE IN M2 DATA FILE")
+
+        annrate_data = os.path.join(args.work_dir, 'data.annrate-{}.m2' \
+            .format(args.ann_rate))
+        cmd.run("{root}/change_annorate_m2.py -e {er} {data} > {erdata}" \
+            .format(root=config.SCRIPTS_DIR, er=args.ann_rate, data=args.data, 
+                    erdata=annrate_data))
+        args.data = annrate_data
+
     log.info("SPLITTING DATA FILES INTO {} PARTS".format(args.parts))
     cross_filebase = os.path.join(args.work_dir, 'cross')
 
@@ -66,7 +76,7 @@ def split_m2_data(m2_file, filepath, num_of_parts):
 
     cmd.run("python {root}/split_m2.py -n {n} -p {fp}. -s .m2 {m2}" \
         .format(root=config.SCRIPTS_DIR, n=num_of_parts, fp=filepath, m2=m2_file))
-    
+
     log.info("preparing text data from M2 files")
     for part in format_parts(num_of_parts):
         cmd.run("cat {fp}.{p}.m2 | perl {root}/make_parallel.perl > {fp}.{p}.txt" \
@@ -228,6 +238,8 @@ def parse_user_arguments():
         help="evaluate classifier")
     parser.add_argument("--m2", action='store_true',
         help="assume --data and --eval are files in M2 format")
+    parser.add_argument("--ann-rate", type=float,
+        help="change error rate in M2 file")
 
     args = parser.parse_args()
 

@@ -20,7 +20,7 @@ class FeatureVectorizer():
     def __init__(self, conf_set, 
                        feat_file=None, 
                        min_feat_count=5, 
-                       max_vec_size=750000):
+                       max_vec_size=2000000):
 
         self.confusion_set = ConfusionSet(conf_set)
         self.min_feat_count = min_feat_count

@@ -5,6 +5,8 @@ import sys
 import math
 import argparse
 
+DEBUG = True
+
 
 def main():
     args = parse_user_arguments()
@@ -18,7 +20,10 @@ def split_m2(m2_file, number, prefix=None, suffix=''):
     
     with open(m2_file) as m2_io:
         num_of_sents = sum(1 for line in m2_io if line.startswith("S "))
+    debug("number of sentences in source M2: {}".format(num_of_sents))
+
     part_size = math.ceil(num_of_sents / float(number))
+    debug("number of sentences per one part: {}".format(part_size))
 
     part_name = format_part_name(prefix, suffix, parts.pop(0))
     part_io = open(part_name, 'w+')
@@ -29,11 +34,14 @@ def split_m2(m2_file, number, prefix=None, suffix=''):
             if line.startswith("S "):
                 s += 1
             part_io.write(line)
-            if s >= part_size and line.strip() == '':
+            if s > part_size and line.strip() == '':
+                debug("wrote {} sentences to part: {}".format(s, part_name))
                 part_io.close()
                 part_name = format_part_name(prefix, suffix, parts.pop(0))
                 part_io = open(part_name, 'w+')
                 s = 0
+    if s != 0:
+        debug("wrote {} sentences to part: {}".format(s, part_name))
     part_io.close()
 
 def format_part_name(prefix, suffix, num):
@@ -42,6 +50,10 @@ def format_part_name(prefix, suffix, num):
 def format_part_endings(size):
     return ["{:0>2d}".format(n) for n in xrange(size)]
 
+
+def debug(msg):
+    if DEBUG:
+        print >> sys.stderr, msg
 
 def parse_user_arguments():
     parser = argparse.ArgumentParser()

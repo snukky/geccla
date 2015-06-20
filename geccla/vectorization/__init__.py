@@ -16,7 +16,7 @@ def create_freq_file(cnfs_file, freq_file):
     cmd.run("cat {0}.unit.sort | uniq -cd | sort -nr -S 10G --parallel 8 > {0}".format(freq_file))
 
 def create_feat_file(freq_file, feat_set, feat_file, 
-                     min_feat_count=5, max_vec_size=750000):
+                     min_feat_count=5, max_vec_size=2000000):
     log.info("truncating features...")
     log.info("minimum count for single feature: {}" \
         .format(min_feat_count))

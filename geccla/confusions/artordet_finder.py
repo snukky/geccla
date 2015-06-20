@@ -17,10 +17,10 @@ class ArtOrDetFinder(BasicFinder):
 
     LEVELS = [1, 2, 3, '1', '2', '3']
 
-    def __init__(self, conf_set=None):
+    def __init__(self, conf_set=None, train_mode=False):
         if not conf_set:
             conf_set = 'a,the,'
-        BasicFinder.__init__(self, conf_set)
+        BasicFinder.__init__(self, conf_set, train_mode=train_mode)
         self.chunker = LBJChunker()
 
     def find_confusion_artordets(self, corpus, level=2):
@@ -59,8 +59,7 @@ class ArtOrDetFinder(BasicFinder):
         """
         words = [w.lower() for w in chunks.words]
         idx_map = tokenization.map_tokens([t.lower() for t in tokens], words)
-        #idx_map = [i for i in xrange(len(tokens))]
-
+        
         for i, err in enumerate(tokens):
             # all edited articles (including insertions and deletions) if data
             # has corrected version
@@ -68,7 +67,7 @@ class ArtOrDetFinder(BasicFinder):
                 cor = edits[(i,i+1)][1]
                 yield (i, i+1, err, cor)
                 continue
-            if (i,i) in edits:
+            if (i,i) in edits and self.train_mode:
                 cor = edits[(i,i)][1]
                 yield (i, i, '<null>', cor)
                 continue
@@ -89,7 +88,8 @@ class ArtOrDetFinder(BasicFinder):
                 # exclude all noun phrases headed by a personal or
                 # demonstrative pronoun
                 if not tags.is_pronoun(chunk['pos'][-1]):
-                    yield (i, i, '<null>', '<null>')
+                    cor = edits[(i,i)][1] if (i,i) in edits else '<null>'
+                    yield (i, i, '<null>', cor)
                 continue
 
             if level < 3:
@@ -98,5 +98,6 @@ class ArtOrDetFinder(BasicFinder):
             # spaces that follow a preposition or a verb
             if i > 0 and (tags.is_prep(chunks.pos[idx_map[i]-1]) \
                     or tags.is_verb(chunks.pos[idx_map[i]-1])):
-                yield (i, i, '<null>', '<null>')
+                cor = edits[(i,i)][1] if (i,i) in edits else '<null>'
+                yield (i, i, '<null>', cor)
                 continue

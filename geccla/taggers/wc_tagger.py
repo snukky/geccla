@@ -15,7 +15,7 @@ class WordClassTagger:
     def __init__(self, dictionary=None):
         self.unknown_wc = '?'
         self.dictionary = dictionary or config.FILES.WORD_CLASSES
-        self.__create_dictionary()
+        self.__load_dictionary()
 
     def tag(self, tokens):
         return [self.dic.get(tok.lower(), self.unknown_wc) for tok in tokens]
@@ -38,7 +38,7 @@ class WordClassTagger:
         output.close()
         return awc_file
 
-    def __create_dictionary(self):
+    def __load_dictionary(self):
         log.info("loading dictionary {}...".format(self.dictionary))
         self.dic = {}
         with open(self.dictionary) as f:

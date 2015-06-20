@@ -17,16 +17,18 @@ def main():
     args = parse_user_arguments()
     
     if args.artordet:
-        finder = ArtOrDetFinder(args.confusion_set)
+        finder = ArtOrDetFinder(args.confusion_set, train_mode=args.train_mode)
         confs = finder.find_confusion_artordets(args.input_file, args.levels)
     elif args.ngrams_prefix:
-        finder = NullFinder(args.confusion_set, awc_dict=args.awc_dict)
+        finder = NullFinder(args.confusion_set, awc_dict=args.awc_dict, 
+                            train_mode=args.train_mode)
         confs = finder.find_confusion_nulls(args.input_file, 
                                             args.ngrams_prefix,
                                             args.levels,
                                             args.min_count)
     else:
-        finder = BasicFinder(args.confusion_set, args.left_confusion_set)
+        finder = BasicFinder(args.confusion_set, args.left_confusion_set, 
+                             args.train_mode)
         confs = finder.find_confusion_words(args.input_file,
                                             args.all_spaces_as_nulls)
 
@@ -55,8 +57,8 @@ def parse_user_arguments():
 
     parser.add_argument('--artordet', action='store_true',
         help="enable enhanced finding rules for articles and determiners")
-    parser.add_argument('--lazy', action='store_true',
-        help="do not add <null> examples if not in confusion set")
+    parser.add_argument('--train-mode', action='store_true',
+        help="extract examples with <null> on the left side")
     parser.add_argument('--all-spaces-as-nulls', action='store_true',
         help="extract all spaces as <null> examples")
     parser.add_argument('--awc-dict', type=str,

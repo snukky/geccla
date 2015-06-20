@@ -17,7 +17,7 @@ import itertools
 
 class FeatureExtractor():
     
-    def __init__(self, window=5, feat_set=None, awc_dict=None):
+    def __init__(self, window=4, feat_set=None, awc_dict=None):
         self.window = window
         self.feat_set = feat_set or 'base'
 

@@ -83,7 +83,7 @@ class LBJChunker():
         if not os.path.isfile(outfile) or wc(file) != wc(outfile):
             log.debug("chunking file {}".format(file))
             os.system("cat {0} | {1} {2} > {3}".format(file, \
-                self.parallel_cmd, self.chunker_cmd, outfile))
+                '', self.chunker_cmd, outfile))
         
         n1 = wc(file) 
         n2 = wc(outfile) 

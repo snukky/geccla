@@ -52,11 +52,7 @@ def main():
         else:
             cmd.ln(args.train, train_file + '.txt')
 
-        #if null_in_confset():
-            #train_nulls(train_file)
-            #args.cnf_opts += " -n {}.ngrams".format(train_file)
-
-        find_confusions(args.cnf_opts, train_file, parallel=True)
+        find_confusions(args.cnf_opts, train_file, parallel=True, train_mode=args.train_with_nulls)
         print_confusion_statistics(train_file, args.mng_opts)
         extract_features(train_file, args.ext_opts)
         
@@ -103,11 +99,7 @@ def main():
         tune_file = cmd.base_filepath(args.work_dir, args.tune)
 
         if args.m2:
-            if args.tune_ann_rate:
-                cmd.run("{root}/../scripts/change_annorate_m2.py -e {er} {m2} > {fp}.m2" \
-                    .format(root=config.ROOT_DIR, er=args.tune_ann_rate, m2=args.tune, fp=tune_file))
-            else:
-                cmd.ln(args.tune, tune_file + '.m2')
+            cmd.ln(args.tune, tune_file + '.m2')
             make_m2_parallel(tune_file)
         else:
             cmd.ln(args.tune, tune_file + '.txt')
@@ -150,9 +142,9 @@ def main():
         for run in args.run:
             run_file = cmd.base_filepath(args.work_dir, run)
             if args.eval:
-                log.info("\n" + cmd.run("cat {0}.eval".format(run_file)))
+                log.info("\n" + cmd.run("tail -n 7 {0}.eval".format(run_file)))
             if args.tune:
-                log.info("\n" + cmd.run("cat {0}.best.eval".format(run_file)))
+                log.info("\n" + cmd.run("tail -n 7 {0}.best.eval".format(run_file)))
 
 
 def train_nulls(filepath):
@@ -168,11 +160,13 @@ def train_nulls(filepath):
     cmd.run("{root}/train_nulls.py -c {cs} -l tok,pos,awc -n {fp}.ngrams {fp}.txt" \
         .format(root=config.ROOT_DIR, cs=CONFUSION_SET, fp=filepath))
 
-def find_confusions(options, filepath, parallel=False, confset=None):
+def find_confusions(options, filepath, parallel=False, confset=None, train_mode=False):
     log.info("finding confusion examples from file: {}.txt".format(filepath))
 
     if not options:
         options = ''
+    if train_mode and '--train-mode' not in options:
+        options += ' --train-mode'
 
     if result_is_ready('{}.cnfs.empty'.format(filepath)):
         return
@@ -354,6 +348,8 @@ def make_m2_parallel(filepath):
     cmd.run("cat {fp}.m2 | perl {root}/make_parallel.perl > {fp}.txt" \
         .format(root=config.SCRIPTS_DIR, fp=filepath))
     cmd.source_side_of_file(filepath + '.txt', filepath + '.in')
+    
+    assert_file_exists(filepath + '.txt')
 
 def result_is_ready(file):
     if os.path.exists(file):
@@ -393,8 +389,8 @@ def parse_user_arguments():
         help="feature set")
     extra.add_argument("--nrm-articles", action='store_true',
         help="normalization of indefinite articles")
-    extra.add_argument("--tune-ann-rate", type=float,
-        help="change error rate in M2 file during tuning")
+    extra.add_argument("--train-with-nulls", action='store_true',
+        help="take into account all (<null>, *) pairs in training")
 
     parser.add_argument("-t", "--train", type=str, 
         help="train classifier on parallel texts")

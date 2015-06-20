@@ -28,6 +28,8 @@ class TOOLS:
     NLTK_TOKENIZER      = '{}/nltk-tok'.format(SCRIPTS_DIR)
     NLTK_DETOKENIZER    = '{}/nltk-detok'.format(SCRIPTS_DIR)
 
+    M2SCORER_CPP        = '/data/smt/mosesdecoder/bin/m2scorer'
+
 
 class FILES:
     WORD_CLASSES        = '/home/romang/data/word2vec/classes.moses.lc.wc'

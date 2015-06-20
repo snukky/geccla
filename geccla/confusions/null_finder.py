@@ -19,8 +19,8 @@ class NullFinder(BasicFinder):
     
     LEVELS = 'tok pos awc'.split()
 
-    def __init__(self, conf_set, clean=False, awc_dict=None):
-        BasicFinder.__init__(self, conf_set)
+    def __init__(self, conf_set, clean=False, awc_dict=None, train_mode=False):
+        BasicFinder.__init__(self, conf_set, train_mode)
 
         self.left_context = None
         self.right_context = None

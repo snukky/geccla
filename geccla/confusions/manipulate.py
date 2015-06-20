@@ -2,33 +2,38 @@ import os
 import sys
 import math
 import shutil
+import random
 
 sys.path.insert(0, os.path.dirname(__file__))
 
 from logger import log
 
 
-# cat test2013.cnfs.empty | tr -s '| ' '\t' | sort -n -k1,1 -k2,2 -k3,3 | sed -r 's/^([0-9]+)\t([0-9]+)\t([0-9]+.*)/\1\t\2 \3/' | sed -r 's/\t/|||/g' > test2013.cnfs.empty.sort
-def impose_error_rate(cnfs_file, error_rate, matrix, in_place=False):
+def impose_error_rate(cnfs_file, error_rate, matrix, 
+                      in_place=False, shuffle=False):
     num_rm = __calculate_num_of_AA_cnfs_to_remove(error_rate, matrix)
-
     if num_rm <= 0:
         return
 
-    if in_place:
-        output = open(cnfs_file + '.moderrrate', 'w+')
-    else:
-        output = sys.stdout
+    AA_edits = []
+    with open(cnfs_file) as cnfs_io:
+        for idx, line in enumerate(cnfs_io):
+            if __is_AA_conf_line(line):
+                AA_edits.append(idx)
 
-    with open(cnfs_file) as cnfs:
-        for line in cnfs:
-            if num_rm > 0 and __is_AA_conf_line(line):
-                num_rm -= 1
-            else:
+    if shuffle:
+        random.shuffle(AA_edits)
+    AA_edits_to_rm = set(AA_edits[:num_rm])
+
+    output = open(cnfs_file + '.mod', 'w+') if in_place else sys.stdout
+
+    with open(cnfs_file) as cnfs_io:
+        for idx, line in enumerate(cnfs_io):
+            if idx not in AA_edits_to_rm:
                 output.write(line)
 
     if in_place:
-        shutil.move(cnfs_file + '.moderrrate', cnfs_file)
+        shutil.move(cnfs_file + '.mod', cnfs_file)
 
 # Example: 
 # AA: 9 

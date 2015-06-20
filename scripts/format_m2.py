@@ -31,7 +31,8 @@ def main():
                 annots.append(anns)
 
             debug(annots)
-            print format_m2_line(err_sent, annots, err_type)
+            print format_m2_line(err_sent, annots, err_type, 
+                                 args.noops, args.merge)
 
     for file in ann_files:
         file.close()
@@ -40,12 +41,30 @@ def main():
     clean_cwords = filter(lambda cw: ' ' not in cw, CONFUSED_WORDS)
     print >> sys.stderr, "clean confused words: {}".format(';'.join(clean_cwords))
 
-def format_m2_line(err_sent, annots, category):
+def format_m2_line(err_sent, annots, category, noops=False, merge=False):
     str = "S {}\n".format(err_sent)
+
+    if noops:
+        with_noops = [idx for idx, anns in enumerate(annots) if len(anns) == 0]
+        if len(with_noops) == len(annots):
+            with_noops = []
+
     for idx, anns in enumerate(annots):
+        if noops and idx in with_noops:
+            str += "A -1 -1|||noop|||-NONE-|||-NONE-|||-NONE-|||{ann}\n" \
+                .format(ann=idx)
         for i, j, cor in anns:
-            str += "A {i} {j}|||{cat}|||{cor}|||REQUIRED|||-NONE-|||{ann}\n" \
-                .format(i=i, j=j, cat=category, cor=cor, ann=idx)
+            skip = False
+
+            if merge:
+                for prev_idx in range(idx):
+                    for i2, j2, cor2 in annots[prev_idx]:
+                        if i == i2 and j == j2 and cor == cor2:
+                            skip = True
+
+            if not skip:
+                str += "A {i} {j}|||{cat}|||{cor}|||REQUIRED|||-NONE-|||{ann}\n" \
+                    .format(i=i, j=j, cat=category, cor=cor, ann=idx)
     return str
         
 def filter_annotations(err_sent, cor_sent, 
@@ -104,6 +123,10 @@ def parse_user_arguments():
         help="confusion set as a comma-separated list of words")
     parser.add_argument('-t', '--error-type', type=str,
         help="error type name for extracted errors")
+    parser.add_argument('-n', '--noops', type=str,
+        help="add noop annotations")
+    parser.add_argument('-m', '--merge', type=str,
+        help="merge identical annotations from different annotators")
     parser.add_argument('-g', '--greedy', action='store_true',
         help="one word from confusion set in edit pair is sufficient")
     parser.add_argument('-s', '--no-spaces', action='store_true',
