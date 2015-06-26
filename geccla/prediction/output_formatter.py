@@ -32,7 +32,7 @@ def inject_predictions(conf_set, format,
 
 class OutputFormatter():
     
-    OUTPUT_FORMATS = ['txt', 'plf']
+    OUTPUT_FORMATS = ['txt', 'plf', 'plf-best']
     PRECISION = 5
 
     def __init__(self, conf_set, restore_case=True, debug=False):
@@ -63,19 +63,21 @@ class OutputFormatter():
 
             if output_format == "txt":
                 format_method = self.__format_txt_sentence
-            elif output_format == "plf":
+            elif output_format.startswith("plf"):
                 format_method = self.__format_plf_sentence
             else:
                 log.error("output format {} not supported!".format(output_format))
 
-            new_text, c = format_method(text, data, threshold, difference)
+            new_text, c = format_method(text, data, 
+                                        threshold, difference, 
+                                        output_format)
             changes += c
             yield new_text
 
         if self.debug:
             log.debug("number of changes: {}".format(changes))
 
-    def __format_txt_sentence(self, sent, data, thr=None, dif=None):
+    def __format_txt_sentence(self, sent, data, thr=None, dif=None, format=None):
         tokens = sent.split()
         changes = 0
 
@@ -109,11 +111,11 @@ class OutputFormatter():
 
         return (new_sent, changes)
 
-    def __format_plf_sentence(self, sent, data, thr=None, dif=None):
+    def __format_plf_sentence(self, sent, data, thr=None, dif=None, format=None):
         """ 
-        Creates output sentence in Python Lattice Format with all
-        alternative answers to which classifier gave non-zero probability.
-        Threshold and difference are not taken into account.
+        Creates output sentence in Python Lattice Format with all alternative
+        answers for which the classifier gives non-zero probability. 
+        Threshold and difference values are not taken into account.
         """
         output = ''
         tokens = sent.split()
@@ -125,22 +127,29 @@ class OutputFormatter():
             if current_data and i != len(tokens) - 1:
                 for i, j, err, _, answers in current_data:
 
-                    alts = self.__plf_alternatives(token, tokens[i+1], answers)
+                    if format == "plf-best":
+                        plf_method = self.__format_plf_alternatives_with_best
+                    else:
+                        plf_method = self.__format_plf_alternatives
+
+                    alts = plf_method(err, tokens[i+1], answers, thr, dif)
                     if alts:
                         output += "({}),".format(alts)
+                        changes += 1
 
-                    if self.debug:
-                        pred = get_best_prediction(err, answers, thr, dif)
-                        log.debug("  ({},{}) {} -> {}".format(i, j, err, pred))
-                        log.debug("  answers: {}".format(answers))
-                        log.debug("  plf: {}".format(alts))
+                        if self.debug:
+                            pred = get_best_prediction(err, answers, thr, dif)
+                            log.debug("  ({},{}) {} -> {}".format(i, j, err, pred))
+                            log.debug("  answers: {}".format(answers))
+                            log.debug("  plf: {}".format(alts))
 
             else:
                 output += "(('{}',1.0,1),),".format(token)
 
         return ('(' + output + ')', changes)
     
-    def __plf_alternatives(self, tok, nexttok, answers):
+    def __format_plf_alternatives(self, tok, nexttok, answers,
+                                        thr=None, dif=None):
         alternatives = ''
         cln_answers = self.__clean_answers(answers)
 
@@ -153,6 +162,25 @@ class OutputFormatter():
         if len(cln_answers) == 1 and alternatives.endswith('2),'):
             return ''
 
+        return alternatives
+
+    def __format_plf_alternatives_with_best(self, tok, nexttok, answers,
+                                                  thr=None, dif=None):
+        alternatives = ''
+        best_pred = max(answers.iterkeys(), key=(lambda k: answers[k]))
+        best_prob = round(answers[best_pred], OutputFormatter.PRECISION)
+    
+        if thr and best_prob and best_prob < thr:
+            best_pred = tok
+
+            if self.debug:
+                log.debug("  threshold too low for '{}' -> '{}'" \
+                    .format(tok, best_pred))
+
+        if best_pred.lower() != tok.lower():
+            alternatives += self.__plf_alternative(tok, nexttok, 1.0 - best_prob)
+            alternatives += self.__plf_alternative(best_pred, nexttok, best_prob)
+        
         return alternatives
 
     def __clean_answers(self, answers):
@@ -168,7 +196,7 @@ class OutputFormatter():
         return cln_answers
 
     def __plf_alternative(self, tok, nexttok, prob):
-        if tok == '':
+        if tok == '' or tok == '<null>':
             text = nexttok
             size = 2
         else: 
