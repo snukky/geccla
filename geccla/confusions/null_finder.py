@@ -100,10 +100,6 @@ class NullFinder(BasicFinder):
                 cor = edits[(i,i+1)][1]
                 yield (i, i+1, err, cor)
                 skip = True
-            elif (i,i) in edits:
-                cor = edits[(i,i)][1]
-                yield (i, i, '<null>', cor)
-                skip = True
 
             elif self.confusion_set.include(err):
                 yield (i, i+1, err, err)
@@ -116,7 +112,11 @@ class NullFinder(BasicFinder):
                     tags = self.__add_boundaries(all_tags[level])
                     ngram = self.__ngram(j, tags, 0)
                     if ngram is not None and level in self.ngrams and ngram in self.ngrams[level]:
-                        yield (i, i, '<null>', '<null>')
+                        if (i,i) in edits:
+                            cor = edits[(i,i)][1]
+                            yield (i, i, '<null>', cor)
+                        else:
+                            yield (i, i, '<null>', '<null>')
                         break
 
 

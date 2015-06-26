@@ -12,12 +12,12 @@ from logger import log
 class BasicFinder():
 
     def __init__(self, conf_set, left_conf_set=None, train_mode=False):
+        self.train_mode = train_mode
         self.confusion_set = ConfusionSet(conf_set) 
         if left_conf_set:
             self.left_conf_set = ConfusionSet(left_conf_set)
         else:
             self.left_conf_set = self.confusion_set
-        self.train_mode = train_mode
         
     def find_confusion_words(self, corpus, all_nulls=False):
         with open(corpus) as corpus_io:
