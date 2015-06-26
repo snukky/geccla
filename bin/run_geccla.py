@@ -5,6 +5,8 @@ import sys
 import argparse
 import shutil
 
+ArgumentError = Exception
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../geccla')))
 
 from classification import ALGORITHMS
@@ -139,12 +141,16 @@ def main():
                 evaluate_m2(run_file + '.best')
             
     if args.run:
-        for run in args.run:
+        for i, run in enumerate(args.run):
             run_file = cmd.base_filepath(args.work_dir, run)
             if args.eval:
                 log.info("\n" + cmd.run("tail -n 7 {0}.eval".format(run_file)))
             if args.tune:
                 log.info("\n" + cmd.run("tail -n 7 {0}.best.eval".format(run_file)))
+
+            if args.output_file:
+                out_file = args.output_file[i]
+                shutil.copy("{}.out".format(run_file), out_file)
 
 
 def train_nulls(filepath):
@@ -381,6 +387,10 @@ def parse_user_arguments():
         help="classifier model")
     base.add_argument("-d", "--work-dir", default=str(os.getpid()), type=str, 
         help="working directory")
+    base.add_argument("-o", "--output-file", type=str, nargs="*",
+        help="output file name; requires --run")
+    base.add_argument("-f", "--output-format", default="txt",
+        help="output file format")
 
     extra = parser.add_argument_group("extra options")
     extra.add_argument("--ngrams", type=str,
@@ -450,6 +460,10 @@ def parse_user_arguments():
     if args.feature_set:
         args.ext_opts += ' --feature-set {}'.format(args.feature_set)
         args.vec_opts += ' --feature-set {}'.format(args.feature_set)
+
+    if args.output_file and len(args.output_file) != len(args.run):
+        raise ArgumentError("you have to specify output file name for each" \
+            " --run file")
 
     log.debug(args)
     return args
