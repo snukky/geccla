@@ -202,7 +202,7 @@ class OutputFormatter():
         else: 
             text = tok
             size = 1
-        return "('{}',{},{}),".format(text, prob, size)
+        return "('{}',{:.5f},{}),".format(text, prob, size)
 
 
 

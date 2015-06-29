@@ -14,13 +14,13 @@ from logger import log
 
 TOK_CONVERTERS = {
     'moses-nltk': 
-        '{moses}/tokenizer/detokenizer.perl -l en | {tok}' \
+        '{moses}/scripts/tokenizer/detokenizer.perl -l en | {tok}' \
         .format(moses=config.TOOLS.MOSES_DIR, tok=config.TOOLS.NLTK_TOKENIZER),
     'nltk-moses': 
-        '{detok} | {moses}/tokenizer/tokenizer.perl' \
+        '{detok} | {moses}/scripts/tokenizer/tokenizer.perl' \
         .format(moses=config.TOOLS.MOSES_DIR, detok=config.TOOLS.NLTK_DETOKENIZER),
     'moses': 
-        '{moses}/tokenizer/tokenizer.perl -l en' \
+        '{moses}/scripts/tokenizer/tokenizer.perl -l en' \
         .format(moses=config.TOOLS.MOSES_DIR)
 }
 
@@ -40,7 +40,7 @@ def restore_file_tok(text_file, orig_file,
     orig_io = codecs.open(orig_file, 'r', encoding='utf8')
 
     for line in text_io:
-        orig_line = orig_file.next()
+        orig_line = orig_io.next()
 
         result = restore_sentence_tok(line.strip(), orig_line.strip(), quotes)
         yield result.encode('utf8', 'replace')
@@ -51,9 +51,10 @@ def restore_file_tok(text_file, orig_file,
     if convert and clean:
         os.remove(pretok_file)
 
-def restore_sentence_tok(sent, orig_sent, quotes=False):
-    log.debug(u'toks: {}'.format(sent).encode('utf8', 'replace'))
-    log.debug(u'orig: {}'.format(orig_sent).encode('utf8', 'replace'))
+def restore_sentence_tok(sent, orig_sent, quotes=False, debug=False):
+    if debug:
+        log.debug(u'toks: {}'.format(sent).encode('utf8', 'replace'))
+        log.debug(u'orig: {}'.format(orig_sent).encode('utf8', 'replace'))
 
     toks = sent.split()
     orig_toks = orig_sent.split()
@@ -62,7 +63,7 @@ def restore_sentence_tok(sent, orig_sent, quotes=False):
     new_toks = []
      
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
-        if tag != 'equal':
+        if tag != 'equal' and debug:
             log.debug(u"  {}: ({},{}) '{}' -> ({},{}) '{}'" \
                 .format(tag, 
                         i1, i2, ' '.join(toks[i1:i2]), 
@@ -101,7 +102,8 @@ def restore_sentence_tok(sent, orig_sent, quotes=False):
             pass
     
     new_sent = ' '.join(new_toks)
-    log.debug('    : {}'.format(new_sent))
+    if debug:
+        log.debug('    : {}'.format(new_sent.encode('utf8', 'replace')))
     return new_sent
 
 def map_tokens(toks1, toks2):
