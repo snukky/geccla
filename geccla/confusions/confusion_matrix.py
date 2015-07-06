@@ -29,10 +29,16 @@ class ConfusionMatrix():
         ab_count = self.num_of_AB_edits()
         print "AB edits   :", ab_count 
         ins_count = self.num_of_insertions()
-        ins_rate = ins_count / float(ab_count)
+        if ab_count == 0:
+            ins_rate = 0.0
+        else:
+            ins_rate = ins_count / float(ab_count)
         print "insertions : %i \t(%.2f %%)" % (ins_count, ins_rate * 100)
         del_count = self.num_of_deletions()
-        del_rate = del_count / float(ab_count)
+        if ab_count == 0:
+            del_rate = 0.0
+        else:
+            del_rate = del_count / float(ab_count)
         print "deletions  : %i \t(%.2f %%)" % (del_count, del_rate * 100)
         sub_count = ab_count - ins_count - del_count
         sub_rate = 1.0 - ins_rate - del_rate
