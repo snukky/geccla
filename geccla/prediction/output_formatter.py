@@ -10,35 +10,44 @@ from prediction import get_best_prediction
 
 from preprocess.letter_case import restore_sentence_case
 from preprocess.artordets import restore_indef_articles_in_sent
+from preprocess import escape_moses_entities
 
 from confusion_set import ConfusionSet
 from logger import log
+
+
+
+OUTPUT_FORMATS = ['txt', 'plf', 'plf-best']
 
 
 def inject_predictions(conf_set, format, 
                        text_file, cnfs_file, pred_file,
                        threshold, difference,
                        output_file,
-                       restore_articles=False):
+                       restore_articles=False,
+                       output_format='txt'):
 
     formatter = OutputFormatter(conf_set)
     with open(output_file, 'w+') as output:
-        for line in formatter.text_output(text_file, cnfs_file, pred_file, 
-                                          format, threshold, difference):
+        for line in formatter.format_output(text_file, cnfs_file, pred_file, 
+                                            format, 
+                                            threshold, difference,
+                                            output_format):
             if restore_articles:
                 line = restore_indef_articles_in_sent(line)
             output.write(line + "\n")
 
 
 class OutputFormatter():
-    
-    OUTPUT_FORMATS = ['txt', 'plf', 'plf-best']
-    PRECISION = 5
 
+    PRECISION = 5
+    
     def __init__(self, conf_set, restore_case=True, debug=False):
         self.confusion_set = ConfusionSet(conf_set)
         self.restore_case = restore_case
         self.debug = debug
+        self.with_comma = True
+        self.escape_html = None
 
     def text_output(self, text_file, cnfs_file, pred_file, 
                           format, 
@@ -49,7 +58,7 @@ class OutputFormatter():
     def format_output(self, text_file, cnfs_file, pred_file, 
                             format, 
                             threshold, difference,
-                            output_format="txt"):
+                            output_format='txt'):
 
         log.info("injecting predictions from file {} with params t={} d={}" \
             .format(pred_file, threshold, difference))
@@ -65,8 +74,12 @@ class OutputFormatter():
                 format_method = self.__format_txt_sentence
             elif output_format.startswith("plf"):
                 format_method = self.__format_plf_sentence
+                self.escape_html = True
             else:
                 log.error("output format {} not supported!".format(output_format))
+
+            if self.escape_html:
+                text = escape_moses_entities(text)
 
             new_text, c = format_method(text, data, 
                                         threshold, difference, 
@@ -117,7 +130,7 @@ class OutputFormatter():
         answers for which the classifier gives non-zero probability. 
         Threshold and difference values are not taken into account.
         """
-        output = ''
+        edges = []
         tokens = sent.split()
         changes = 0
 
@@ -126,47 +139,59 @@ class OutputFormatter():
 
             if current_data and i != len(tokens) - 1:
                 for i, j, err, _, answers in current_data:
-
                     if format == "plf-best":
                         plf_method = self.__format_plf_alternatives_with_best
                     else:
                         plf_method = self.__format_plf_alternatives
 
-                    alts = plf_method(err, tokens[i+1], answers, thr, dif)
-                    if alts:
-                        output += "({}),".format(alts)
-                        changes += 1
+                    if self.debug:
+                        pred = get_best_prediction(err, answers, thr, dif)
+                        log.debug("  ({},{}) {} -> {}".format(i, j, err, pred))
+                        log.debug("  answers: {}".format(answers))
 
-                        if self.debug:
-                            pred = get_best_prediction(err, answers, thr, dif)
-                            log.debug("  ({},{}) {} -> {}".format(i, j, err, pred))
-                            log.debug("  answers: {}".format(answers))
-                            log.debug("  plf: {}".format(alts))
+                    alts = plf_method(err, tokens[j], answers, thr, dif)
+                    if alts:
+                        log.debug("  plf: {}".format(alts))
+                        edges.append(alts)
+                        changes += 1
+                        if i == j:
+                            edges.append("('{}',1.0,1)".format(token))
+                    else:
+                        edges.append("('{}',1.0,1)".format(token))
 
             else:
-                output += "(('{}',1.0,1),),".format(token)
+                edges.append("('{}',1.0,1)".format(token))
+
+        output = ''
+        if self.with_comma:
+            output = ''.join(map(lambda e: "({},),".format(e), edges))
+        else:
+            output = ','.join(map(lambda e: "({})".format(e), edges))
+
+        if self.debug:
+            log.debug("output: {}".format(output))
 
         return ('(' + output + ')', changes)
     
     def __format_plf_alternatives(self, tok, nexttok, answers,
                                         thr=None, dif=None):
-        alternatives = ''
+        alternatives = []
         cln_answers = self.__clean_answers(answers)
 
         rest = 1.0 - sum(cln_answers.values())
         for i, (tok, prob) in enumerate(cln_answers.iteritems()):
             if i == 0:
                 prob += rest
-            alternatives += self.__plf_alternative(tok, nexttok, prob)
+            alternatives.append(self.__plf_alternative(tok, nexttok, prob))
 
-        if len(cln_answers) == 1 and alternatives.endswith('2),'):
-            return ''
+        if len(cln_answers) == 1 and alternatives[-1].endswith(',2)'):
+            return '' 
 
-        return alternatives
+        return ','.join(alternatives)
 
     def __format_plf_alternatives_with_best(self, tok, nexttok, answers,
                                                   thr=None, dif=None):
-        alternatives = ''
+        alternatives = []
         best_pred = max(answers.iterkeys(), key=(lambda k: answers[k]))
         best_prob = round(answers[best_pred], OutputFormatter.PRECISION)
     
@@ -178,10 +203,10 @@ class OutputFormatter():
                     .format(tok, best_pred))
 
         if best_pred.lower() != tok.lower():
-            alternatives += self.__plf_alternative(tok, nexttok, 1.0 - best_prob)
-            alternatives += self.__plf_alternative(best_pred, nexttok, best_prob)
+            alternatives.append(self.__plf_alternative(tok, nexttok, 1.0 - best_prob))
+            alternatives.append(self.__plf_alternative(best_pred, nexttok, best_prob))
         
-        return alternatives
+        return ','.join(alternatives)
 
     def __clean_answers(self, answers):
         sum_probs = sum(answers.values())
@@ -202,7 +227,7 @@ class OutputFormatter():
         else: 
             text = tok
             size = 1
-        return "('{}',{:.5f},{}),".format(text, prob, size)
+        return "('{}',{:.5f},{})".format(text, prob, size)
 
 
 

@@ -6,6 +6,7 @@ import argparse
 
 from classification import FORMATS
 from prediction.output_formatter import OutputFormatter
+from prediction.output_formatter import OUTPUT_FORMATS
 from preprocess.artordets import restore_indef_articles_in_sent
 
 
@@ -44,8 +45,7 @@ def parse_user_arguments():
         " classifier prediction") 
 
     parser.add_argument('-o', '--output-format', default="txt",
-        choices=OutputFormatter.OUTPUT_FORMATS,
-        help="output format")
+        choices=OUTPUT_FORMATS, help="output format")
     parser.add_argument('--restore-articles', action='store_true',
         help="restore indefinite articles")
     parser.add_argument('--debug', action='store_true',

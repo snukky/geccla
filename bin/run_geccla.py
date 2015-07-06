@@ -19,6 +19,9 @@ from confusion_set import ConfusionSet
 
 from preprocess.artordets import normalize_indef_articles
 from preprocess.artordets import restore_indef_articles
+from preprocess import deescape_moses_entities_in_files
+
+from prediction.output_formatter import OUTPUT_FORMATS
 
 import cmd
 import config
@@ -79,6 +82,11 @@ def main():
                 log.info("normalizing indefinite articles: {}.txt".format(train_file))
                 shutil.move(run_file + '.txt', run_file + '.txt.nonrm')
                 normalize_indef_articles(run_file + '.txt.nonrm', run_file + '.txt')
+            
+            if args.output_format.startswith('plf'):
+                log.info("deescaping HTML entities")
+                shutil.move(run_file + '.txt', run_file + '.txt.noesc')
+                deescape_moses_entities_in_files(run_file + '.txt.noesc', run_file + '.txt')
 
             find_confusions(args.cnf_opts, run_file, parallel=args.eval)
             print_confusion_statistics(run_file)
@@ -88,6 +96,11 @@ def main():
             run_classifier(args.model, args.cls_opts, run_file)
 
             inject_predictions(args.evl_opts, run_file, args.nrm_articles)
+            if args.output_format != 'txt':
+                inj_opts = args.evl_opts
+                if args.debug:
+                    inj_opts += ' --debug'
+                inject_predictions(inj_opts, run_file, args.nrm_articles, args.output_format)
 
             if args.eval:
                 log.info("EVALUATING FILE: {}".format(run))
@@ -149,8 +162,11 @@ def main():
                 log.info("\n" + cmd.run("tail -n 7 {0}.best.eval".format(run_file)))
 
             if args.output_file:
-                out_file = args.output_file[i]
-                shutil.copy("{}.out".format(run_file), out_file)
+                out_file = '{}.out'.format(run_file)
+                if args.output_format != 'txt':
+                    out_file += '.' + args.output_format
+                assert_file_exists(out_file)
+                shutil.copy(out_file, args.output_file[i])
 
 
 def train_nulls(filepath):
@@ -259,10 +275,15 @@ def run_classifier(model, options, filepath):
         .format(root=config.ROOT_DIR, cs=CONFUSION_SET, alg=ALGORITHM,
                 opts=options, model=model, fp=filepath))
 
-def inject_predictions(options, filepath, nrm_articles=False):
+def inject_predictions(options, filepath, nrm_articles=False, format=None):
     log.info("injecting predictions {0}.pred into {0}.in".format(filepath))
 
-    if result_is_ready('{}.out'.format(filepath)):
+    output = '{}.out'.format(filepath)
+    if format and format != 'txt':
+        options += ' --output-format {}'.format(format)
+        output += '.' + format
+
+    if result_is_ready(output):
         return
     
     assert_file_exists(filepath + '.in')
@@ -272,9 +293,9 @@ def inject_predictions(options, filepath, nrm_articles=False):
     if nrm_articles:
         options += ' --restore-articles'
 
-    cmd.run("{root}/inject_preds.py -c {cs} -f {frm} {opts} {fp}.in {fp}.cnfs {fp}.pred > {fp}.out" \
+    cmd.run("{root}/inject_preds.py -c {cs} -f {frm} {opts} {fp}.in {fp}.cnfs {fp}.pred > {out}" \
         .format(root=config.ROOT_DIR, cs=CONFUSION_SET, frm=FORMAT, 
-                opts=options, fp=filepath))
+                opts=options, fp=filepath, out=output))
     
     cmd.wdiff(filepath + '.in', filepath + '.out')
 
@@ -389,8 +410,8 @@ def parse_user_arguments():
         help="working directory")
     base.add_argument("-o", "--output-file", type=str, nargs="*",
         help="output file name; requires --run")
-    base.add_argument("-f", "--output-format", default="txt",
-        help="output file format")
+    base.add_argument("-f", "--output-format", choices=OUTPUT_FORMATS,
+        help="output file format", default="txt")
 
     extra = parser.add_argument_group("extra options")
     extra.add_argument("--ngrams", type=str,
@@ -401,6 +422,8 @@ def parse_user_arguments():
         help="normalization of indefinite articles")
     extra.add_argument("--train-with-nulls", action='store_true',
         help="take into account all (<null>, *) pairs in training")
+    extra.add_argument("--debug", action='store_true',
+        help="show detail debug messages")
 
     parser.add_argument("-t", "--train", type=str, 
         help="train classifier on parallel texts")
