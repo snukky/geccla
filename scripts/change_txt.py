@@ -1,8 +1,12 @@
 #!/usr/bin/python
 
+import os
+import sys
 import argparse
 import math
 import random
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../geccla')))
 
 from confusions.basic_finder import BasicFinder
 from logger import log
