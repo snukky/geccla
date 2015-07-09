@@ -69,14 +69,11 @@ class PLFFormatter():
         return '(' + output + ')', changes
     
     def format_all_alternatives(self, tok, nexttok, answers,
-                                        thr=None, dif=None):
+                                      thr=None, dif=None):
         alternatives = []
-        cln_answers = self.__clean_answers(answers)
+        cln_answers = self.__clean_answers(tok, answers, thr)
 
-        rest = 1.0 - sum(cln_answers.values())
         for i, (tok, prob) in enumerate(cln_answers.iteritems()):
-            if i == 0:
-                prob += rest
             alternatives.append(self.__plf_alternative(tok, nexttok, prob))
 
         if len(cln_answers) == 1 and alternatives[-1].endswith(',2)'):
@@ -85,7 +82,7 @@ class PLFFormatter():
         return ','.join(alternatives)
 
     def format_best_alternatives(self, tok, nexttok, answers,
-                                         thr=None, dif=None):
+                                       thr=None, dif=None):
         alternatives = []
         best_pred = max(answers.iterkeys(), key=(lambda k: answers[k]))
         best_prob = round(answers[best_pred], PRECISION)
@@ -103,15 +100,22 @@ class PLFFormatter():
         
         return ','.join(alternatives)
 
-    def __clean_answers(self, answers):
+    def __clean_answers(self, tok, answers, thr=0.0):
         sum_probs = sum(answers.values())
         cln_answers = {}
 
         for tok, prob in answers.iteritems():
             round_prob = round(prob / sum_probs, PRECISION)
-            if round_prob == 0.0:
+            if round_prob <= thr:
                 continue
             cln_answers[tok] = round_prob
+
+        rest = 1.0 - sum(cln_answers.values())
+        if tok.lower() in cln_answers:
+            cln_answers[tok.lower()] += rest
+        else:
+            for ans in cln_answers:
+                cln_answers[ans] += rest / float(len(cln_answers))
 
         return cln_answers
 
@@ -122,6 +126,8 @@ class PLFFormatter():
         else: 
             text = tok
             size = 1
+        if prob == 1.0:
+            return "('{}',1.0,{})".format(text, size)
         return "('{}',{:.5f},{})".format(text, prob, size)
 
 

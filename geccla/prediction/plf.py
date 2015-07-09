@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from logger import log
 
-DEBUG = True
+DEBUG = False
 
 
 def parse_plf_line(line):
