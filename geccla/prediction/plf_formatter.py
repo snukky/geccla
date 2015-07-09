@@ -6,6 +6,8 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from logger import log
 
+PRECISION = 5
+
 
 class PLFFormatter():
     
@@ -13,9 +15,9 @@ class PLFFormatter():
         self.debug = debug
         self.with_comma = True
 
-        PLF_FORMAT_METHODS = {
-            'plf':      self.format_best_alternatives,
-            'plf-best': self.format_all_alternatives,
+        self.PLF_FORMAT_METHODS = {
+            'plf':      self.format_all_alternatives,
+            'plf-best': self.format_best_alternatives,
         }
 
     def format_plf_sentence(self, sent, data, 
@@ -40,7 +42,7 @@ class PLFFormatter():
                         log.debug("  ({},{}) {} -> ???".format(i, j, err))
                         log.debug("  answers: {}".format(answers))
 
-                    plf_method = PLF_FORMAT_METHODS[format]
+                    plf_method = self.PLF_FORMAT_METHODS[format]
                     alts = plf_method(err, tokens[j], answers, thr, dif)
 
                     if alts:
@@ -66,7 +68,7 @@ class PLFFormatter():
 
         return '(' + output + ')', changes
     
-    def __format_all_alternatives(self, tok, nexttok, answers,
+    def format_all_alternatives(self, tok, nexttok, answers,
                                         thr=None, dif=None):
         alternatives = []
         cln_answers = self.__clean_answers(answers)
@@ -82,11 +84,11 @@ class PLFFormatter():
 
         return ','.join(alternatives)
 
-    def __format_best_alternatives(self, tok, nexttok, answers,
+    def format_best_alternatives(self, tok, nexttok, answers,
                                          thr=None, dif=None):
         alternatives = []
         best_pred = max(answers.iterkeys(), key=(lambda k: answers[k]))
-        best_prob = round(answers[best_pred], OutputFormatter.PRECISION)
+        best_prob = round(answers[best_pred], PRECISION)
     
         if thr and best_prob and best_prob < thr:
             best_pred = tok
@@ -106,7 +108,7 @@ class PLFFormatter():
         cln_answers = {}
 
         for tok, prob in answers.iteritems():
-            round_prob = round(prob / sum_probs, OutputFormatter.PRECISION)
+            round_prob = round(prob / sum_probs, PRECISION)
             if round_prob == 0.0:
                 continue
             cln_answers[tok] = round_prob

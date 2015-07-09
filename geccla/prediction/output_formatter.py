@@ -42,8 +42,6 @@ def inject_predictions(conf_set, format,
 
 class OutputFormatter():
 
-    PRECISION = 5
-    
     def __init__(self, conf_set, restore_case=True, debug=False):
         self.confusion_set = ConfusionSet(conf_set)
         self.restore_case = restore_case
