@@ -168,6 +168,10 @@ def main():
                 assert_file_exists(out_file)
                 shutil.copy(out_file, args.output_file[i])
 
+    if args.clean:
+        log.info("Removing working directory")
+        shutil.rmtree(args.work_dir)
+
 
 def train_nulls(filepath):
     log.info("training <null> positions from file: {}.txt".format(filepath))
@@ -412,6 +416,8 @@ def parse_user_arguments():
         help="output file name; requires --run")
     base.add_argument("-f", "--output-format", choices=OUTPUT_FORMATS,
         help="output file format", default="txt")
+    base.add_argument("--clean", action='store_true', 
+        help="remove working directory after computations")
 
     extra = parser.add_argument_group("extra options")
     extra.add_argument("--ngrams", type=str,
@@ -451,6 +457,9 @@ def parse_user_arguments():
         help="options for evaluation")
 
     args = parser.parse_args()
+
+    if args.work_dir == str(os.getpid()):
+        args.clean = True
 
     if not args.model:
         args.model = os.path.join(args.work_dir, '{}.model'.format(args.algorithm))

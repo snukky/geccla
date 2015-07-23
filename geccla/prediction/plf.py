@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from logger import log
 
-DEBUG = False
+DEBUG = True
 
 
 def parse_plf_line(line):
@@ -38,16 +38,24 @@ def join_plf_lines(line1, line2, idx=None):
         edges2 = graph2[idx2]
 
         if DEBUG:
-            if len(graph) > 0:
-                log.debug("added: {}".format(graph[-1]))
             log.debug("idxes: {} {}".format(idx1, idx2))
             log.debug("edges:\n{}\n{}".format(edges1, edges2))
 
         if len(edges1) == 1 and len(edges2) == 1:
+            text1 = edges1[0][0].lower()
+            text2 = edges2[0][0].lower()
+
             if DEBUG:
                 log.debug("case:  1:1")
-                if edges1[0][0].lower() != edges2[0][0].lower():
+                if text1 != text2:
                     log.warn("different texts!")
+
+            if text1 != text2:
+                if text1 == graph2[idx2+1][0][0].lower():
+                    idx2 += 1
+                if text2 == graph1[idx1+1][0][0].lower():
+                    idx1 += 1
+
             graph.append(edges1)
             idx1 += 1
             idx2 += 1

@@ -65,7 +65,8 @@ class PLFFormatter():
 
         if self.debug:
             log.debug("output: {}".format(output))
-
+        
+        output = output.replace("\\", "\\\\")
         return '(' + output + ')', changes
     
     def format_all_alternatives(self, tok, nexttok, answers,
