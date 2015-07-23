@@ -20,10 +20,12 @@ from logger import log
 def main():
     args = parse_user_arguments()
 
+    # Create working directory
     if not os.path.exists(args.work_dir):
         os.makedirs(args.work_dir)
     log.info("working directory: {}".format(args.work_dir))
 
+    # Change error rate in M2 file
     if args.m2 and args.ann_rate:
         log.info("CHANGING ERROR RATE IN M2 DATA FILE")
 
@@ -34,6 +36,7 @@ def main():
                     erdata=annrate_data))
         args.data = annrate_data
 
+    # Preprare data parts for cross validation
     log.info("SPLITTING DATA FILES INTO {} PARTS".format(args.parts))
     cross_filebase = os.path.join(args.work_dir, 'cross')
 
@@ -42,21 +45,26 @@ def main():
 
     eval_files = ' '.join(args.eval)
 
+    # Train cross validation parts and find threshold parameters
     for part in format_parts(args.parts):
         log.info("CROSS VALIDATION PART {}".format(part))
 
-        create_train_files(cross_filebase, part, args.parts, args.more_data)
+        create_train_files(cross_filebase, part, args.parts, args.more_data, 
+            args.shuffle_data)
 
         cross_file = cross_filebase + '.' + part
-        train_cross(cross_file, args.algorithm, args.confusion_set, args.m2, args.geccla)
+        train_cross(cross_file, args.algorithm, args.confusion_set, args.m2, 
+            args.geccla)
 
         log.info("PART {} - EVALUATING ON FILES: {}".format(part, eval_files))
         eval_cross(cross_file, eval_files, args.m2)
 
+    # Find average (tuned) threshold parameter
     log.info("AVERAGING PARAMS")
     param_sets = collect_evaluation_params(cross_filebase, args.parts)
     evl_opts = average_param_sets(param_sets)
 
+    # Train on all data
     log.info("TRAINING ON ALL DATA")
     train_file = os.path.join(args.work_dir, 'train.txt')
 
@@ -66,6 +74,7 @@ def main():
     options = " --evl-opts ' {}' {}".format(evl_opts, args.geccla)
     train_geccla(release_dir, train_file, args.algorithm, args.confusion_set, options)
 
+    # Evaluate with tunned threshold parameter
     log.info("EVALUATING ON FILES: {}".format(eval_files))
     run_geccla(release_dir, eval_files, args.m2)
     
@@ -95,17 +104,24 @@ def split_txt_data(txt_file, filepath, num_of_parts):
     cmd.run("split --lines {size} -d --additional-suffix .txt {txt} {fp}." \
         .format(txt=txt_file, size=part_size, fp=filepath))
 
-def create_train_files(filepath, part, num_of_parts, more_data=None):
+def create_train_files(filepath, 
+                       part, num_of_parts, 
+                       more_data=None, 
+                       shuffle=None):
+
     if result_is_ready('{}.{}.train.txt'.format(filepath, part)):
         return
-
+    
+    cat_or_shuf = 'shuf' if shuffle else 'cat'
     if more_data:
-        cmd.run("cat {} >> {}.{}.train.txt".format(more_data, filepath, part))
+        cmd.run("{} {} >> {}.{}.train.txt".format(cat_or_shuf, more_data, 
+            filepath, part))
 
     train_files = ' '.join(["{}.{}.txt".format(filepath, p) 
                             for p in format_parts(num_of_parts) 
                             if p != part])
-    cmd.run("cat {} >> {}.{}.train.txt".format(train_files, filepath, part))
+    cmd.run("{} {} >> {}.{}.train.txt".format(cat_or_shuf, train_files, 
+        filepath, part))
 
 
 def train_cross(crosspath, algorithm, confset, m2, options):
@@ -225,6 +241,8 @@ def parse_user_arguments():
         help="number of cross validation parts")
     base.add_argument("--work-dir", type=str, required=True,
         help="working directory")
+    base.add_argument("-s", "--shuffle-data", action='store_true',
+        help="shuffle data in cross validations")
 
     geccla = parser.add_argument_group("geccla arguments")
     geccla.add_argument('--geccla', type=str,
