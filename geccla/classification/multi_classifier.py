@@ -44,6 +44,14 @@ class MultiClassifier():
                         data=data_file, model=model_file, pred=pred_file, 
                         opts=reduced_options))
 
+        elif 'vwldf' == algorithm:
+            reduced_options = re.sub(r'--csoaa_ldf\s+mc?', '', options)
+
+            cmd.run("{bin} -t -d {data} -i {model} -c -r {pred} {opts}" \
+                .format(bin=config.CLASSIFIERS.VW_BIN, 
+                        data=data_file, model=model_file, pred=pred_file, 
+                        opts=reduced_options))
+
         elif 'liblinear' == algorithm:
             cmd.run("{dir}/predict -b 1 {data} {model} {pred}" \
                 .format(dir=config.CLASSIFIERS.LIBLINEAR_DIR, 
@@ -86,6 +94,12 @@ class MultiClassifier():
                 .format(bin=config.CLASSIFIERS.VW_BIN, 
                         data=data_file, model=model_file,
                         opts=options))
+            
+        elif 'vwldf' == algorithm:
+            cmd.run("{bin} -d {data} -f {model} -c {opts}" \
+                .format(bin=config.CLASSIFIERS.VW_BIN, 
+                        data=data_file, model=model_file,
+                        opts=options))
 
         elif 'liblinear' == algorithm:
             cmd.run("{bin}/train {opts} {data} {model}" \
@@ -113,6 +127,8 @@ class MultiClassifier():
             return " -P 0.001,2.0:0-{}".format(self.num_classes - 1)
         elif 'vw' == algorithm:
             return " --oaa {} --loss_function quantile".format(self.num_classes)
+        elif 'vwldf' == algorithm:
+            return " --csoaa_ldf m -q st --passes 5"
         elif 'liblinear' == algorithm:
             return " -M 0 -s 7 -c 1"
         return ""

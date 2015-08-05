@@ -3,6 +3,7 @@ ALGORITHMS_AND_FORMATS = {
     'majority'  : 'libsvm',
     'snow'      : 'snow',
     'vw'        : 'vw',
+    'vwldf'     : 'vwldf',
     'liblinear' : 'libsvm',
     'maxent'    : 'maxent',
     'perfect'   : 'libsvm',

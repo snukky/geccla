@@ -12,7 +12,7 @@ from confusions import parse_conf_line
 from logger import log
 
 
-FORMATS_NEEDED_NORMALIZATION = ['vw']
+FORMATS_NEEDED_NORMALIZATION = ['vw', 'vwldf']
 
 
 def iterate_text_confs_and_preds(text_file, cnfs_file, preds):
@@ -93,6 +93,29 @@ def parse_pred_file(pred_file, format, conf_set):
                     answers[conf_set.num_label_to_word(label, 1)] = float(value)
                 predictions.append(answers)
 
+    elif 'vwldf' == format:
+        labels = conf_set.as_list()
+        #log.warn(pred_file)
+
+        with open(pred_file) as file:
+            answers = {}
+            idx = 0
+            for line in file:
+                #log.warn(line.strip())
+
+                if line.strip():
+                    label = labels[idx]
+                    answers[label] = -1 * float(line.strip().split(':')[-1])
+                    idx += 1
+                else:
+                    #log.warn("raw: {}".format(answers))
+                    #nrm_answers = { word: __softmax(value, answers.values())
+                                    #for word, value in answers.iteritems() }
+                    #log.warn("nrm: {}".format(nrm_answers))
+                    predictions.append(answers)
+                    answers = {}
+                    idx = 0
+
     elif 'libsvm' == format:
         with open(pred_file) as file:
             labels = None
@@ -157,8 +180,10 @@ def normalize_predictions(preds):
     log.info("sigmoid normalization of predictions")
     nrm_preds = []
     for answers in preds:
-        nrm_preds.append({ word: __sigmoid(value) 
+        nrm_preds.append({ word: __softmax(value, answers.values())
                            for word, value in answers.iteritems() })
+        #nrm_preds.append({ word: __sigmoid(value) 
+                           #for word, value in answers.iteritems() })
     return nrm_preds
 
 def __sigmoid(x):
@@ -169,3 +194,6 @@ def __sigmoid(x):
         # zero because it's 1+z.
         z = math.exp(x)
         return z / (1 + z)
+
+def __softmax(x, xs):
+    return math.exp(x) / sum(math.exp(xx) for xx in xs)

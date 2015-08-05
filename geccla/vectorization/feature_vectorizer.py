@@ -43,6 +43,8 @@ class FeatureVectorizer():
             self.__format_snow_data(cnfs_file, data_file)
         elif format == 'vw':
             self.__format_vw_data(cnfs_file, data_file)
+        elif format == 'vwldf':
+            self.__format_vwldf_data(cnfs_file, data_file)
         elif format == 'libsvm':
             self.__format_libsvm_data(cnfs_file, data_file)
         elif format == 'maxent':
@@ -119,6 +121,35 @@ class FeatureVectorizer():
                 data.write("{0} | {1}\n".format(label, ' '.join(vector)))
         data.close()
     
+    def __format_vwldf_data(self, cnfs_file, data_file, feat_set=None):
+        """
+        shared |s feats ...
+        1111:0 |w <null>
+        1111:0 |w a
+        1111:0 |w the
+
+        """
+        log.info("creating VW LDF data...")
+
+        data = open(data_file, 'w+')
+        with open(cnfs_file) as cnfs:
+            for line in cnfs:
+                _, _, _, err, cor, feats = parse_conf_line(line)
+                
+                vector = [ "{}".format(self.__escape_vw_chars(feat)) 
+                           for feat in feats if feat in self.feat_vec ]
+                data.write("shared |s {0} {1}\n".format(err, ' '.join(vector)))
+
+                for word in self.confusion_set.as_list():
+                    label = 0 if word.lower() == cor.lower() else 1
+                    if word.lower() == err.lower() and label == 1:
+                        label = 2
+
+                    data.write("1111:{0} |t {1}\n".format(label, word.lower()))
+                data.write("\n")
+
+        data.close()
+
     def __escape_vw_chars(self, text):
         return text.replace(':', '<col>').replace('|', '<bar>')
 
