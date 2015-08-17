@@ -5,7 +5,10 @@ import sys
 import argparse
 import math
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../geccla')))
+from joblib import Parallel, delayed
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 
+                                                '../geccla')))
 
 from run_geccla import assert_file_exists
 from run_geccla import result_is_ready
@@ -15,6 +18,8 @@ import cmd
 import config
 
 from logger import log
+
+PARALLEL_VERBOSE = False
 
 
 def main():
@@ -43,41 +48,54 @@ def main():
     split_data = split_m2_data if args.m2 else split_txt_data
     split_data(args.data, cross_filebase, args.parts)
 
-    eval_files = ' '.join(args.eval)
-
     # Train cross validation parts and find threshold parameters
+    jobs = []
     for part in format_parts(args.parts):
-        log.info("CROSS VALIDATION PART {}".format(part))
+        jobs.append(delayed(run_cross_validation)(part, cross_filebase, args))
 
-        create_train_files(cross_filebase, part, args.parts, args.more_data, 
-            args.shuffle_data)
+    # Train on all data
+    train_file = os.path.join(args.work_dir, 'train.txt')
+    release_dir = os.path.join(args.work_dir, 'release')
+    jobs.append(delayed(run_release)(train_file, release_dir, args))
 
-        cross_file = cross_filebase + '.' + part
-        train_cross(cross_file, args.algorithm, args.confusion_set, args.m2, 
-            args.geccla)
-
-        log.info("PART {} - EVALUATING ON FILES: {}".format(part, eval_files))
-        eval_cross(cross_file, eval_files, args.m2)
+    Parallel(n_jobs=args.jobs, verbose=PARALLEL_VERBOSE)(jobs)
 
     # Find average (tuned) threshold parameter
     log.info("AVERAGING PARAMS")
     param_sets = collect_evaluation_params(cross_filebase, args.parts)
     evl_opts = average_param_sets(param_sets)
 
-    # Train on all data
-    log.info("TRAINING ON ALL DATA")
-    train_file = os.path.join(args.work_dir, 'train.txt')
-
-    create_train_file(train_file, args.data, args.more_data, args.m2)
-
-    release_dir = os.path.join(args.work_dir, 'release')
-    options = " --evl-opts ' {}' {}".format(evl_opts, args.geccla)
-    train_geccla(release_dir, train_file, args.algorithm, args.confusion_set, options)
+    log.info("Updating evaluation options")
+    cmd.run("sed -ir 's/evl=.*/evl={}/' {}/release.model.settings" \
+        .format(evl_opts, release_dir))
 
     # Evaluate with tunned threshold parameter
+    eval_files = ' '.join(args.eval)
     log.info("EVALUATING ON FILES: {}".format(eval_files))
     run_geccla(release_dir, eval_files, args.m2)
-    
+
+
+def run_cross_validation(part, cross_filebase, args):
+    log.info("CROSS VALIDATION PART {}".format(part))
+
+    create_train_files(cross_filebase, part, args.parts, args.more_data, 
+        args.shuffle_data)
+
+    cross_file = cross_filebase + '.' + part
+    train_cross(cross_file, args.algorithm, args.confusion_set, args.m2, 
+        args.geccla)
+
+    eval_files = ' '.join(args.eval)
+    log.info("PART {} - EVALUATING ON FILES: {}".format(part, eval_files))
+    eval_cross(cross_file, eval_files, args.m2)
+
+def run_release(train_file, release_dir, args):
+    log.info("TRAINING ON ALL DATA")
+
+    create_train_file(train_file, args.data, args.more_data, args.m2)
+    train_geccla(release_dir, train_file, args.algorithm, args.confusion_set, 
+        args.geccla)
+
 
 def split_m2_data(m2_file, filepath, num_of_parts):
     if result_is_ready('{}.00.txt'.format(filepath)):
@@ -112,15 +130,15 @@ def create_train_files(filepath,
     if result_is_ready('{}.{}.train.txt'.format(filepath, part)):
         return
     
-    cat_or_shuf = 'shuf' if shuffle else 'cat'
+    shuf = '| shuf' if shuffle else ''
     if more_data:
-        cmd.run("{} {} >> {}.{}.train.txt".format(cat_or_shuf, more_data, 
+        cmd.run("cat {} {} >> {}.{}.train.txt".format(more_data, shuf, 
             filepath, part))
 
     train_files = ' '.join(["{}.{}.txt".format(filepath, p) 
                             for p in format_parts(num_of_parts) 
                             if p != part])
-    cmd.run("{} {} >> {}.{}.train.txt".format(cat_or_shuf, train_files, 
+    cmd.run("cat {} {} >> {}.{}.train.txt".format(train_files, shuf, 
         filepath, part))
 
 
@@ -196,7 +214,8 @@ def run_geccla(release_dir, eval_files, m2=False):
         " --work-dir {rel} --model {rel}/release.model" \
         " --run {eval} --eval {m2}" \
         " > {rel}/output.eval 2>&1" \
-        .format(root=config.ROOT_DIR, rel=release_dir, eval=eval_files, m2=m2_opt)
+        .format(root=config.ROOT_DIR, rel=release_dir, eval=eval_files, 
+                m2=m2_opt)
     cmd.run(command)
 
 
@@ -241,8 +260,8 @@ def parse_user_arguments():
         help="number of cross validation parts")
     base.add_argument("--work-dir", type=str, required=True,
         help="working directory")
-    base.add_argument("-s", "--shuffle-data", action='store_true',
-        help="shuffle data in cross validations")
+    base.add_argument("--jobs", type=int, 
+        help="number of jobs (default is number of parts + 1)")
 
     geccla = parser.add_argument_group("geccla arguments")
     geccla.add_argument('--geccla', type=str,
@@ -252,6 +271,8 @@ def parse_user_arguments():
         help="data for training and tuning classifier")
     parser.add_argument("-m", "--more-data", type=str,
         help="more data for training classifier")
+    parser.add_argument("--shuffle-data", action='store_true',
+        help="shuffle data in cross validations")
     parser.add_argument("-e", "--eval", nargs="*", type=str,
         help="evaluate classifier")
     parser.add_argument("--m2", action='store_true',
@@ -266,6 +287,9 @@ def parse_user_arguments():
         assert_file_exists(args.more_data)
     for eval in args.eval:
         assert_file_exists(eval)
+
+    if not args.jobs:
+        args.jobs = args.parts + 1
 
     log.debug(args)
     return args

@@ -64,7 +64,7 @@ def main():
         vectorize_features(args.vec_opts, train_file)
         train_classifier(args.model, args.cls_opts, train_file)
 
-        args.vec_opts += " -v {}.cnfs.feat".format(train_file)
+        args.vec_opts += " -v {}.cnfs.feat".format(os.path.abspath(train_file))
         create_setting_file(args)
 
     if args.run:
@@ -238,9 +238,10 @@ def extract_features(filepath, options=''):
 
 def print_confusion_statistics(filepath, options=''):
     stats = cmd.run("{root}/manage_confs.py {opts} {fp}.cnfs.empty" \
+        " | tee {fp}.cnfs.stats" \
         .format(root=config.ROOT_DIR, cs=CONFUSION_SET, 
                 opts=options, fp=filepath))
-    log.info("training data statistics:\n{}".format(stats))
+    log.info("data statistics:\n{}".format(stats))
 
 def vectorize_features(options, filepath):
     log.info("vectorizing features from file {}.cnfs".format(filepath))
@@ -487,6 +488,7 @@ def parse_user_arguments():
         raise ArgumentError("argument --m2 requires --run")
 
     if args.ngrams:
+        args.ngrams = os.path.abspath(args.ngrams)
         args.cnf_opts += " -n {}".format(args.ngrams)
 
     if args.feature_set:

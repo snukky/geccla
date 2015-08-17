@@ -43,8 +43,10 @@ def cut(file, col_file=None, col=1):
 def source_side_of_file(file, src_file=None):
     if is_parallel_file(file):
         if not src_file:
-            src_file = file + '.src'
-        return cut(file, src_file)
+            src_file = os.path.splitext(file)[0] + '.in'
+        if not os.path.exists(src_file):
+            return cut(file, src_file)
+        return src_file
     return file
 
 def is_parallel_file(file):

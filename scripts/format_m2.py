@@ -27,7 +27,7 @@ def main():
             for ann_file in ann_files:
                 cor_sent = ann_file.next().strip()
                 anns = filter_annotations(err_sent, cor_sent, conf_set, 
-                                          args.greedy, not args.no_spaces)
+                                          args.greedy, args.no_spaces)
                 annots.append(anns)
 
             debug(annots)
@@ -37,9 +37,13 @@ def main():
     for file in ann_files:
         file.close()
 
-    print >> sys.stderr, "all confused words: {}".format(';'.join(CONFUSED_WORDS))
+    print >> sys.stderr, "Confused words (with spaces):\n  {}" \
+        .format('\n  '.join(CONFUSED_WORDS))
+
     clean_cwords = filter(lambda cw: ' ' not in cw, CONFUSED_WORDS)
-    print >> sys.stderr, "clean confused words: {}".format(';'.join(clean_cwords))
+
+    print >> sys.stderr, "Confused words (no spaces):\n  {}" \
+        .format('\n  '.join(clean_cwords))
 
 def format_m2_line(err_sent, annots, category, noops=False, merge=False):
     str = "S {}\n".format(err_sent)
@@ -69,7 +73,7 @@ def format_m2_line(err_sent, annots, category, noops=False, merge=False):
         
 def filter_annotations(err_sent, cor_sent, 
                        conf_set, 
-                       greedy=False, allow_spaces=True):
+                       greedy=False, no_spaces=False):
     global CONFUSED_WORDS
 
     err_toks = err_sent.split()
@@ -87,6 +91,8 @@ def filter_annotations(err_sent, cor_sent,
         
         if tag == 'replace':
             if greedy and (err_txt_lc in conf_set or cor_txt_lc in conf_set):
+                if no_spaces and (' ' in err_txt or ' ' in cor_txt):
+                    continue
                 annots.append( (i1, i2, cor_txt) )
                 CONFUSED_WORDS.add(err_txt_lc)
                 CONFUSED_WORDS.add(cor_txt_lc)

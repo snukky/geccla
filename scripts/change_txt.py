@@ -23,6 +23,8 @@ def main():
     to_del = num_of_sents_to_delete(args.error_rate, all_sents, len(err_sents))
 
     if not to_del:
+        if args.error_rate is None:
+            print "error rate:", len(err_sents) / float(all_sents)
         exit()
 
     if args.shuffle:
@@ -81,14 +83,14 @@ def calculate_stats(file, confset):
 
 
 def parse_user_arguments():
-    parser = argparse.ArgumentParser(description="Delete sentences from M2" \
-        " file to ensure desired error rate.")
+    parser = argparse.ArgumentParser(description="Delete sentences from " \
+        " parallel file to ensure desired error rate.")
 
     parser.add_argument('input_file', help="text file")
     parser.add_argument('-c', '--confusion-set', type=str, required=True,
         help="confusion set as comma-separated list of words")
     parser.add_argument('-e', '--error-rate', type=float,
-        help="desired annotation-to-sentence rate")
+        help="desired rate of erroneous sentences to all sentences")
     parser.add_argument('--shuffle', action='store_true',
         help="remove random sentences")
     return parser.parse_args()

@@ -128,7 +128,7 @@ class MultiClassifier():
         elif 'vw' == algorithm:
             return " --oaa {} --loss_function quantile".format(self.num_classes)
         elif 'vwldf' == algorithm:
-            return " --csoaa_ldf m -q st --passes 5"
+            return " --csoaa_ldf m -q st"
         elif 'liblinear' == algorithm:
             return " -M 0 -s 7 -c 1"
         return ""

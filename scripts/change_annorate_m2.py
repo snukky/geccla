@@ -55,7 +55,7 @@ def calculate_num_of_sents_to_delete(m2_file, error_rate):
         return 0
 
     ann_rate = num_of_annos / float(num_of_sents)
-    debug("current annotation rate: {}".format(ann_rate))
+    debug("annotation rate: {}".format(ann_rate))
 
     if not error_rate:
         return 0

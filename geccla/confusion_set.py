@@ -20,6 +20,7 @@ class ConfusionSet:
 
     def include(self, word):
         cw = '<null>' if word == '' else word
+        cw = ',' if word == '<comma>' else word
         return cw.lower() in self.cs
 
     def include_in_non_nulls(self, word):
@@ -54,6 +55,7 @@ class ConfusionSet:
     def __prepare_confusion_set(self, words):
         cs = ['<null>' if w.strip() == '' else w.strip().lower() 
               for w in words.split(',')]
+        cs = [',' if w == '<comma>' else w for w in cs]
         return sorted(list(set(cs)))
 
     def __iter__(self):
