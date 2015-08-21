@@ -19,12 +19,14 @@ DEBUG_COUNTER = 100000
 def main():
     args = parse_user_arguments()
 
-    all_sents, err_sents, cor_sents = calculate_stats(args.input_file, args.confusion_set)
-    to_del = num_of_sents_to_delete(args.error_rate, all_sents, len(err_sents))
+    all_sents, err_sents, cor_sents, _ = \
+        calculate_stats(args.input_file, args.confusion_set)
+    to_del = sents_to_delete(args.error_rate, all_sents, len(err_sents))
 
     if not to_del:
         if args.error_rate is None:
-            print "error rate:", len(err_sents) / float(all_sents)
+            err_rate = len(err_sents) / float(all_sents) if all_sents else 0.0
+            print "error rate:", err_rate
         exit()
 
     if args.shuffle:
@@ -39,7 +41,10 @@ def main():
                 log.debug("[{}]".format(idx + 1))
 
 
-def num_of_sents_to_delete(err_rate, num_of_sents, num_of_err_sents):
+def sents_to_delete(err_rate, num_of_sents, num_of_err_sents):
+    if not num_of_sents or not num_of_err_sents:
+        return 0
+
     current_err_rate = num_of_err_sents / float(num_of_sents)
     log.debug("current annotation rate: {}".format(current_err_rate))
 
@@ -61,25 +66,32 @@ def calculate_stats(file, confset):
     finder = BasicFinder(confset, train_mode=True)
 
     err_sents = []
+    cnf_sents = []
     log.debug("finding confusions...")
 
     idx = 0
     for s, i, j, err, cor in finder.find_confusion_words(file):
         idx += 1
+        cnf_sents.append(s)
         if err != cor:
             err_sents.append(s)
         if idx % DEBUG_COUNTER == 0:
             log.debug("[{}]".format(idx))
 
     num_of_sents = cmd.wc(file)
+    cnf_sents_set = set(cnf_sents)
+    cln_sents = [i for i in range(num_of_sents) if i not in cnf_sents_set]
     err_sents_set = set(err_sents)
-    cor_sents = [i for i in range(num_of_sents) if i not in err_sents_set]
+    cor_sents = [i for i in range(num_of_sents) if i not in err_sents_set
+                                               and i in cnf_sents_set]
 
     log.info("all sentences: {}".format(num_of_sents))
-    log.info("sentences with error: {}".format(len(err_sents)))
-    log.info("sentences no error: {}".format(len(cor_sents)))
+    log.info("sentences with confusion words: {}".format(len(cnf_sents_set)))
+    log.info("sentences without confusion words: {}".format(len(cln_sents)))
+    log.info("sentences with errors: {}".format(len(err_sents_set)))
+    log.info("sentences without errors: {}".format(len(cor_sents)))
 
-    return num_of_sents, err_sents, cor_sents
+    return len(cnf_sents_set), list(err_sents_set), cor_sents, cln_sents
 
 
 def parse_user_arguments():
